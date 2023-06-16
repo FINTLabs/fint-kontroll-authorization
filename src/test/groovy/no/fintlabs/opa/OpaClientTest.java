@@ -20,6 +20,7 @@ public class OpaClientTest {
         when(restTemplate.postForObject(isA(String.class), isA(Map.class), any())).thenReturn(new OpaClient.OpaResponse("true"));
 
         OpaClient opaClient = new OpaClient().setRestTemplate(restTemplate);
+        opaClient = opaClient.setOpaUrl("http://dummy.url/");
         boolean isAuthorized = opaClient.isAuthorized("ragnild.hansen@viken.no", "GET");
 
         assertThat(isAuthorized).isTrue();
@@ -34,6 +35,7 @@ public class OpaClientTest {
         when(restTemplate.postForObject(isA(String.class), isA(Map.class), any())).thenReturn(new OpaClient.OpaResponse("false"));
 
         OpaClient opaClient = new OpaClient().setRestTemplate(restTemplate);
+        opaClient = opaClient.setOpaUrl("http://dummy.url/");
         boolean isAuthorized = opaClient.isAuthorized("unknown@viken.no", "GET");
 
         assertThat(isAuthorized).isFalse();

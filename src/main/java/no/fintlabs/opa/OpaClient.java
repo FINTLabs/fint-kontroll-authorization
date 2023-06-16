@@ -46,4 +46,9 @@ public class OpaClient {
         this.restTemplate = restTemplate;
         return this;
     }
+
+    public OpaClient setOpaUrl(String opaUrl) {
+        this.opaUrl = opaUrl;
+        return this;
+    }
 }
