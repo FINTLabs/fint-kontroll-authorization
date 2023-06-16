@@ -1,6 +1,7 @@
 package no.fintlabs.opa;
 
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
 import org.springframework.web.client.RestTemplate;
 
@@ -9,8 +10,8 @@ import java.util.Map;
 @Slf4j
 @Component
 public class OpaClient {
-    //TODO: Move to configuration
-    private String opaUrl = "http://fint-kontroll-opa:8181/v1/data/accessmanagement/allow";
+    @Value("${fint.kontroll.opa.url}")
+    private String opaUrl;
     private RestTemplate restTemplate = new RestTemplate();
     public OpaClient() {
     }
