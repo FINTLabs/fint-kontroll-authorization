@@ -25,14 +25,15 @@ public class OpaAuthorizationManager implements ReactiveAuthorizationManager<Aut
     @Override
     public Mono<AuthorizationDecision> check(Mono<Authentication> authentication, AuthorizationContext context) {
         return authentication
-                .map(a -> {
-                    // Get the principal name from the JWT token
+                .flatMap(a -> {
                     JwtAuthenticationToken jwtToken = (JwtAuthenticationToken) a;
                     Jwt principal = (Jwt) jwtToken.getPrincipal();
-                    FintJwtEndUserPrincipal from = FintJwtEndUserPrincipal.from(principal);
+                    FintJwtEndUserPrincipal fintJwtEndUserPrincipal = FintJwtEndUserPrincipal.from(principal);
+                    String userName = fintJwtEndUserPrincipal.getMail() != null ? fintJwtEndUserPrincipal.getMail() : "";
 
+                    // Get the principal name from the JWT token
                     String principalName = (String) principal.getClaims().get("principalName");
-                    log.info("Fant brukernavn {}", principalName);
+                    log.info("Fant principalName {}", principalName);
 
                     ServerHttpRequest request = context.getExchange().getRequest();
                     log.info("Request method {}", request.getMethod());
@@ -41,14 +42,17 @@ public class OpaAuthorizationManager implements ReactiveAuthorizationManager<Aut
                     boolean authenticated = a.isAuthenticated();
                     log.info("Authenticated {}", authenticated);
 
-                    // Kall til OPA, sjekk om brukeren har tilgang
-                    boolean authorized = opaClient.isAuthorized(principalName, request.getMethodValue());
+                    log.info("Checking if user is authorized in opa with username {}", userName);
 
-                    log.info("Authorized {}", authorized);
-                    return new AuthorizationDecision(authorized);
+                    // Call to OPA, check if the user has access
+                    return opaClient.isAuthorized(userName, request.getMethodValue())
+                            .map(authorized -> {
+                                log.info("Authorized {}", authorized);
+                                return new AuthorizationDecision(authorized);
+                            });
                 })
                 .defaultIfEmpty(new AuthorizationDecision(false))
-                .doOnError(error -> System.out.println("An error occured while authorizing: " + error.getMessage()));
+                .doOnError(error -> System.out.println("An error occurred while authorizing: " + error.getMessage()));
     }
 
     @Override
