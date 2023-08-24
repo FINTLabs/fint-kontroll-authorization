@@ -19,15 +19,17 @@ public class FintKontrollSecurityConfig {
     @Bean
     SecurityWebFilterChain springSecurityFilterChain(ServerHttpSecurity http) {
         http
-                .authorizeExchange()
-                .pathMatchers("/**")
-                .access(opaAuthorizationManager)
-                .anyExchange()
-                .authenticated()
-                .and()
+                .authorizeExchange(exchanges -> exchanges
+                        .pathMatchers("/**")
+                        .access(opaAuthorizationManager)
+                        .anyExchange()
+                        .authenticated()
+                )
                 .oauth2ResourceServer((resourceServer) -> resourceServer
-                        .jwt()
-                        .jwtAuthenticationConverter(new FintJwtUserConverter()));
+                        .jwt((jwt) -> jwt
+                                .jwtAuthenticationConverter(new FintJwtUserConverter())
+                        )
+                );
         return http.build();
     }
 

@@ -20,7 +20,7 @@ import reactor.core.publisher.Mono;
 public class OpaAuthorizationManager implements ReactiveAuthorizationManager<AuthorizationContext> {
 
     @Autowired
-    private OpaClient opaClient;
+    private AuthorizationClient authorizationClient;
 
     @Override
     public Mono<AuthorizationDecision> check(Mono<Authentication> authentication, AuthorizationContext context) {
@@ -45,7 +45,7 @@ public class OpaAuthorizationManager implements ReactiveAuthorizationManager<Aut
                     log.info("Checking if user is authorized in opa with username {}", userName);
 
                     // Call to OPA, check if the user has access
-                    return opaClient.isAuthorized(userName, request.getMethodValue())
+                    return authorizationClient.isAuthorized(userName, String.valueOf(request.getMethod()))
                             .map(authorized -> {
                                 log.info("Authorized {}", authorized);
                                 return new AuthorizationDecision(authorized);
