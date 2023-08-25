@@ -1,5 +1,5 @@
 name: CI
-on: [push]
+on: [push, pull_request]
 
 jobs:
   build:
@@ -21,3 +21,10 @@ jobs:
           arguments: |
             test
             build
+
+      - name: Notify Slack on Failure
+        if: always()
+        run: |
+          curl -X POST -H 'Content-type: application/json' --data '{"channel":"#fint-kontroll-builds","text":"Build failed!"}' https://slack.com/api/chat.postMessage
+        env:
+          SLACK_BOT_TOKEN: ${{ secrets.SLACK_BOT_TOKEN }}
