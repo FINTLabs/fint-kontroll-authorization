@@ -20,11 +20,14 @@ public class AuthorizationClient {
     }
 
     public Mono<Boolean> isAuthorized(String user, String operation) {
+        log.info("Checking if user {} is authorized for operation {}", user, operation);
         return opaApiClient.hasUserAuthorization(user, operation);
     }
 
     public Mono<LinkedHashMap> getUserScopes() {
+        log.info("Getting user scopes");
         return authenticationUtil.isAuthenticated()
+                .doOnNext(authenticated -> log.info("User is authenticated: {}", authenticated))
                 .flatMapMany(authenticated -> {
                     if (authenticated) {
                         log.info("User is authenticated, getting user scopes");

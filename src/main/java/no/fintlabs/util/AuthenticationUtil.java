@@ -1,5 +1,6 @@
 package no.fintlabs.util;
 
+import lombok.extern.slf4j.Slf4j;
 import no.vigoiks.resourceserver.security.FintJwtEndUserPrincipal;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.ReactiveSecurityContextHolder;
@@ -9,10 +10,14 @@ import org.springframework.security.oauth2.server.resource.authentication.JwtAut
 import org.springframework.stereotype.Component;
 import reactor.core.publisher.Mono;
 
+@Slf4j
 @Component
 public class AuthenticationUtil {
     public Mono<String> getUserName() {
+        log.info("Getting user name");
+
         return getSecurityContextMono()
+                .doOnNext(securityContext -> log.info("Got security context {}", securityContext))
                 .flatMap(securityContext -> {
                     Authentication authentication = securityContext.getAuthentication();
                     JwtAuthenticationToken jwtToken = (JwtAuthenticationToken) authentication;
@@ -24,7 +29,10 @@ public class AuthenticationUtil {
     }
 
     public Mono<Boolean> isAuthenticated() {
+        log.info("Checking if user is authenticated");
+
         return getSecurityContextMono()
+                .doOnNext(securityContext -> log.info("Got security context {}", securityContext))
                 .map(securityContext -> {
                     Authentication authentication = securityContext.getAuthentication();
                     return authentication.isAuthenticated();
