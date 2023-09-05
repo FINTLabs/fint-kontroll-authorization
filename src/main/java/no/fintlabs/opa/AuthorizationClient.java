@@ -1,19 +1,19 @@
 package no.fintlabs.opa;
 
 import lombok.extern.slf4j.Slf4j;
-import no.fintlabs.util.AuthenticationUtilSync;
+import no.fintlabs.util.AuthenticationUtil;
 import org.springframework.stereotype.Component;
 
 import java.util.LinkedHashMap;
 
 @Slf4j
 @Component
-public class AuthorizationClientSync {
+public class AuthorizationClient {
 
-    private final OpaApiClientSync opaApiClient;
-    private final AuthenticationUtilSync authenticationUtil;
+    private final OpaApiClient opaApiClient;
+    private final AuthenticationUtil authenticationUtil;
 
-    public AuthorizationClientSync(OpaApiClientSync opaApiClient, AuthenticationUtilSync authenticationUtil) {
+    public AuthorizationClient(OpaApiClient opaApiClient, AuthenticationUtil authenticationUtil) {
         this.opaApiClient = opaApiClient;
         this.authenticationUtil = authenticationUtil;
     }

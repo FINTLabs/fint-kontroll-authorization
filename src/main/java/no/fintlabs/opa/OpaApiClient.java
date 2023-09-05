@@ -13,11 +13,11 @@ import java.util.Map;
 
 @Slf4j
 @Component
-public class OpaApiClientSync {
+public class OpaApiClient {
 
     private RestTemplate restTemplate;
 
-    public OpaApiClientSync(RestTemplate restTemplate) {
+    public OpaApiClient(RestTemplate restTemplate) {
         this.restTemplate = restTemplate;
     }
 

@@ -11,7 +11,7 @@ import org.springframework.stereotype.Component;
 
 @Slf4j
 @Component
-public class AuthenticationUtilSync {
+public class AuthenticationUtil {
     public String getUserName() {
         log.info("Getting user name");
 

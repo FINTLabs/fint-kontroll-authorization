@@ -20,10 +20,10 @@ import java.util.Collection;
 @Slf4j
 @RequiredArgsConstructor
 @Component
-public class OpaAuthorizationManagerSync implements AccessDecisionManager {
+public class OpaAuthorizationManager implements AccessDecisionManager {
 
     @Autowired
-    private AuthorizationClientSync authorizationClient;
+    private AuthorizationClient authorizationClient;
 
     @Override
     public void decide(Authentication authentication, Object object, Collection<ConfigAttribute> configAttributes)

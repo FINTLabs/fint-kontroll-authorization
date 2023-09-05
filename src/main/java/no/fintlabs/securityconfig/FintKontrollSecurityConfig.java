@@ -1,6 +1,6 @@
 package no.fintlabs.securityconfig;
 
-import no.fintlabs.opa.OpaAuthorizationManagerSync;
+import no.fintlabs.opa.OpaAuthorizationManager;
 import no.fintlabs.util.JwtUserConverter;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.Bean;
@@ -11,10 +11,10 @@ import org.springframework.security.web.SecurityFilterChain;
 
 @Configuration
 @EnableWebSecurity
-public class FintKontrollSyncSecurityConfig {
+public class FintKontrollSecurityConfig {
 
     @Autowired
-    private OpaAuthorizationManagerSync opaAuthorizationManager;
+    private OpaAuthorizationManager opaAuthorizationManager;
 
     @Bean
     public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
