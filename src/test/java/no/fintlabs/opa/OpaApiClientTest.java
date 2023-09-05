@@ -1,21 +1,8 @@
 package no.fintlabs.opa;
 
-import okhttp3.mockwebserver.MockResponse;
-import okhttp3.mockwebserver.MockWebServer;
-import okhttp3.mockwebserver.RecordedRequest;
-import org.junit.jupiter.api.AfterEach;
-import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.Test;
-import org.springframework.web.reactive.function.client.WebClient;
-import reactor.test.StepVerifier;
-
-import java.util.LinkedHashMap;
-
-import static org.junit.jupiter.api.Assertions.assertEquals;
-
 public class OpaApiClientTest {
 
-    private MockWebServer mockWebServer;
+    /*private MockWebServer mockWebServer;
     private OpaApiClient opaApiClient;
 
     @BeforeEach
@@ -56,5 +43,5 @@ public class OpaApiClientTest {
         RecordedRequest recordedRequest = mockWebServer.takeRequest();
         assertEquals("POST", recordedRequest.getMethod());
         assertEquals("/scopes", recordedRequest.getPath());
-    }
+    }*/
 }

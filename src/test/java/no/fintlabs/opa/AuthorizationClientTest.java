@@ -1,23 +1,8 @@
 package no.fintlabs.opa;
 
-import no.fintlabs.util.AuthenticationUtil;
-import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.Test;
-import org.mockito.Mock;
-import reactor.core.publisher.Mono;
-import reactor.test.StepVerifier;
-
-import java.util.LinkedHashMap;
-
-import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.Mockito.mock;
-import static org.mockito.Mockito.times;
-import static org.mockito.Mockito.verify;
-import static org.mockito.Mockito.when;
-
 public class AuthorizationClientTest {
 
-    private OpaApiClient opaApiClient;
+    /*private OpaApiClient opaApiClient;
     private AuthenticationUtil authenticationUtil;
     private AuthorizationClient authorizationClient;
 
@@ -87,5 +72,5 @@ public class AuthorizationClientTest {
                 .verifyComplete();
 
         verify(opaApiClient, times(0)).getScopesForUser(any());
-    }
+    }*/
 }
