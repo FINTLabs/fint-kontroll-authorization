@@ -1,15 +1,15 @@
 package no.fintlabs.opa;
 
 import lombok.extern.slf4j.Slf4j;
+import no.fintlabs.opa.model.Scope;
 import no.fintlabs.util.AuthenticationUtil;
 import org.springframework.stereotype.Component;
 
-import java.util.LinkedHashMap;
+import java.util.List;
 
 @Slf4j
 @Component
 public class AuthorizationClient {
-
     private final OpaApiClient opaApiClient;
     private final AuthenticationUtil authenticationUtil;
 
@@ -23,7 +23,7 @@ public class AuthorizationClient {
         return opaApiClient.hasUserAuthorization(user, operation);
     }
 
-    public LinkedHashMap getUserScopes() {
+    public List<Scope> getUserScopes() {
         log.info("Getting user scopes");
         Boolean authenticated = authenticationUtil.isAuthenticated();
         log.info("User is authenticated: {}", authenticated);
@@ -33,11 +33,11 @@ public class AuthorizationClient {
             return lookupScopes();
         } else {
             log.info("User is not authenticated");
-            return new LinkedHashMap();
+            return List.of();
         }
     }
 
-    private LinkedHashMap lookupScopes() {
+    private List<Scope> lookupScopes() {
         String userName = authenticationUtil.getUserName();
         log.info("Looking up scopes for user {}", userName);
         return opaApiClient.getScopesForUser(userName);

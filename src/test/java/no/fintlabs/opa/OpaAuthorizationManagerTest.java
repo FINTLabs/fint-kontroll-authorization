@@ -1,42 +1,81 @@
 package no.fintlabs.opa;
 
+import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
+import org.mockito.InjectMocks;
+import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
+import org.springframework.security.access.AccessDeniedException;
+import org.springframework.security.core.Authentication;
+import org.springframework.security.oauth2.jwt.Jwt;
+import org.springframework.security.oauth2.server.resource.authentication.JwtAuthenticationToken;
+import org.springframework.web.context.request.RequestContextHolder;
+import org.springframework.web.context.request.ServletRequestAttributes;
+
+import javax.servlet.http.HttpServletRequest;
+import java.util.Collection;
+import java.util.Map;
+
+import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
+import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.mockito.ArgumentMatchers.anyString;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.when;
 
 @ExtendWith(MockitoExtension.class)
 public class OpaAuthorizationManagerTest {
-    /*@Mock
-    private AuthorizationClient authorizationClient;
 
     @InjectMocks
     private OpaAuthorizationManager opaAuthorizationManager;
 
+    @Mock
+    private AuthorizationClient authorizationClient;
+
+    @Mock
+    private JwtAuthenticationToken jwtAuthenticationToken;
+
+    @Mock
+    private Jwt principal;
+
     @Test
-    public void testCheckUserAuthorized() {
-        String userName = "ragnhild.hansen@viken.no";
-        String principalName = "testPrincipalName";
-        HttpMethod requestMethod = HttpMethod.GET;
+    public void testDecide_Authorized() {
+        HttpServletRequest httpServletRequest = mock(HttpServletRequest.class);
+        RequestContextHolder.setRequestAttributes(new ServletRequestAttributes(httpServletRequest));
 
-        Jwt jwt = new Jwt("tokenValue", Instant.now(), Instant.now().plusSeconds(3600),
-                          Collections.singletonMap("principalName", principalName), Map.of("email", "ragnhild.hansen@viken.no"));
+        when(httpServletRequest.getMethod()).thenReturn("GET");
 
-        JwtAuthenticationToken jwtToken = new JwtAuthenticationToken(jwt);
+        when(jwtAuthenticationToken.getPrincipal()).thenReturn(principal);
+        when(principal.getClaims()).thenReturn(Map.of("principalName", "john.doe"));
+        when(authorizationClient.isAuthorized(anyString(), anyString())).thenReturn(true);
 
-        ServerHttpRequest serverHttpRequest = mock(ServerHttpRequest.class);
-        when(serverHttpRequest.getMethod()).thenReturn(requestMethod);
+        assertDoesNotThrow(() -> {
+            opaAuthorizationManager.decide(jwtAuthenticationToken, new Object(), mock(Collection.class));
+        });
+    }
 
-        ServerWebExchange serverWebExchange = mock(ServerWebExchange.class);
-        when(serverWebExchange.getRequest()).thenReturn(serverHttpRequest);
+    @Test
+    public void testDecide_Unauthorized() {
+        HttpServletRequest httpServletRequest = mock(HttpServletRequest.class);
+        RequestContextHolder.setRequestAttributes(new ServletRequestAttributes(httpServletRequest));
 
-        AuthorizationContext context = new AuthorizationContext(serverWebExchange);
+        when(httpServletRequest.getMethod()).thenReturn("GET");
 
-        when(authorizationClient.isAuthorized(userName, requestMethod.name())).thenReturn(Mono.just(true));
+        when(jwtAuthenticationToken.getPrincipal()).thenReturn(principal);
+        when(principal.getClaims()).thenReturn(Map.of("principalName", "john.doe"));
+        when(authorizationClient.isAuthorized(anyString(), anyString())).thenReturn(false);
 
-        StepVerifier.create(opaAuthorizationManager.check(Mono.just(jwtToken), context))
-                .assertNext(decision -> assertEquals(true, decision.isGranted()))
-                .verifyComplete();
+        assertThrows(AccessDeniedException.class, () -> {
+            opaAuthorizationManager.decide(jwtAuthenticationToken, new Object(), mock(Collection.class));
+        });
+    }
 
+    @Test
+    public void testDecide_NotJwtAuthentication() {
+        Authentication notJwtAuth = mock(Authentication.class);
 
-    }*/
+        assertThrows(AccessDeniedException.class, () -> {
+            opaAuthorizationManager.decide(notJwtAuth, new Object(), mock(Collection.class));
+        });
+    }
 
 }

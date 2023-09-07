@@ -1,8 +1,24 @@
 package no.fintlabs.opa;
 
+import no.fintlabs.opa.model.Scope;
+import no.fintlabs.util.AuthenticationUtil;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
+
+import java.util.List;
+
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.times;
+import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.when;
+
 public class AuthorizationClientTest {
 
-    /*private OpaApiClient opaApiClient;
+    private OpaApiClient opaApiClient;
     private AuthenticationUtil authenticationUtil;
     private AuthorizationClient authorizationClient;
 
@@ -15,62 +31,70 @@ public class AuthorizationClientTest {
 
     @Test
     public void shouldBeAuthorized() {
-        when(opaApiClient.hasUserAuthorization("ragnild.hansen@viken.no", "GET")).thenReturn(Mono.just(true));
+        when(opaApiClient.hasUserAuthorization("ragnild.hansen@viken.no", "GET")).thenReturn(true);
 
-        Mono<Boolean> authorized = authorizationClient.isAuthorized("ragnild.hansen@viken.no", "GET");
+        Boolean authorized = authorizationClient.isAuthorized("ragnild.hansen@viken.no", "GET");
 
-        StepVerifier.create(authorized)
-                .expectNext(true)
-                .verifyComplete();
-
-        verify(opaApiClient, times(1)).hasUserAuthorization(any(), any());
+        assertTrue(authorized);
     }
 
     @Test
     public void unknownUserShouldNotBeAuthorized() {
-        when(opaApiClient.hasUserAuthorization("ragnild.hansen@viken.no", "GET")).thenReturn(Mono.just(false));
+        when(opaApiClient.hasUserAuthorization("unknown@viken.no", "GET")).thenReturn(false);
 
-        Mono<Boolean> authorized = authorizationClient.isAuthorized("ragnild.hansen@viken.no", "GET");
+        Boolean authorized = authorizationClient.isAuthorized("unknown@viken.no", "GET");
 
-        StepVerifier.create(authorized)
-                .expectNext(false)
-                .verifyComplete();
+        assertFalse(authorized);
 
-        verify(opaApiClient, times(1)).hasUserAuthorization(any(), any());
+        verify(opaApiClient, times(1)).hasUserAuthorization("unknown@viken.no", "GET");
     }
 
     @Test
     public void shouldGetUserScopes() {
         String userName = "ragnild.hansen@viken.no";
 
-        when(authenticationUtil.isAuthenticated()).thenReturn(Mono.just(true));
-        when(authenticationUtil.getUserName()).thenReturn(Mono.just(userName));
+        when(authenticationUtil.isAuthenticated()).thenReturn(true);
+        when(authenticationUtil.getUserName()).thenReturn(userName);
 
-        LinkedHashMap<String, Object> map = new LinkedHashMap<>();
-        map.put("result", "true");
+        Scope scope1 = Scope.builder()
+                .id("1")
+                .objectType("user")
+                .orgUnits(List.of("198", "2", "3"))
+                .build();
 
-        when(opaApiClient.getScopesForUser(userName)).thenReturn(Mono.just(map));
+        Scope scope2 = Scope.builder()
+                .id("2")
+                .objectType("role")
+                .orgUnits(List.of("198", "2", "3"))
+                .build();
 
-        Mono<LinkedHashMap> scopes = authorizationClient.getUserScopes();
+        List<Scope> scopes = List.of(scope1, scope2);
 
-        StepVerifier.create(scopes)
-                .expectNext(map)
-                .verifyComplete();
+        when(opaApiClient.getScopesForUser(userName)).thenReturn(scopes);
 
-        verify(opaApiClient, times(1)).getScopesForUser(any());
+        List<Scope> foundScopes = authorizationClient.getUserScopes();
+
+        assertEquals(2, foundScopes.size());
+        assertEquals("1", foundScopes.get(0).getId());
+        assertEquals("user", foundScopes.get(0).getObjectType());
+        assertEquals(3, foundScopes.get(0).getOrgUnits().size());
+        assertEquals("198", foundScopes.get(0).getOrgUnits().get(0));
+        assertEquals("2", foundScopes.get(0).getOrgUnits().get(1));
+        assertEquals("3", foundScopes.get(0).getOrgUnits().get(2));
+
+        verify(opaApiClient, times(1)).getScopesForUser(userName);
         verify(authenticationUtil, times(1)).getUserName();
         verify(authenticationUtil, times(1)).isAuthenticated();
     }
 
     @Test
     public void shouldNotGetUserScopesIfNotAuthenticated() {
-        when(authenticationUtil.isAuthenticated()).thenReturn(Mono.just(false));
+        when(authenticationUtil.isAuthenticated()).thenReturn(false);
 
-        Mono<LinkedHashMap> scopes = authorizationClient.getUserScopes();
+        List<Scope> scopes = authorizationClient.getUserScopes();
 
-        StepVerifier.create(scopes)
-                .verifyComplete();
+        assertEquals(0, scopes.size());
 
         verify(opaApiClient, times(0)).getScopesForUser(any());
-    }*/
+    }
 }
