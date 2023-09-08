@@ -9,7 +9,6 @@ import org.springframework.security.access.AccessDecisionManager;
 import org.springframework.security.access.AccessDeniedException;
 import org.springframework.security.access.ConfigAttribute;
 import org.springframework.security.authentication.InsufficientAuthenticationException;
-import org.springframework.security.authorization.AuthorizationDecision;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.oauth2.jwt.Jwt;
 import org.springframework.security.oauth2.server.resource.authentication.JwtAuthenticationToken;
@@ -22,13 +21,14 @@ import java.util.Collection;
 @Slf4j
 @RequiredArgsConstructor
 @Component
-public class OpaAuthorizationManager implements AccessDecisionManager {
+public class KontrollAuthorizationManager implements AccessDecisionManager {
 
     @Autowired
     private AuthorizationClient authorizationClient;
 
     @Value("${fint.kontroll.authorization.authorized-role:rolle}")
     private String authorizedRole;
+
     @Value("${fint.kontroll.authorization.authorized-org-id:vigo.no}")
     private String authorizedOrgId;
 
@@ -36,41 +36,40 @@ public class OpaAuthorizationManager implements AccessDecisionManager {
     @Override
     public void decide(Authentication authentication, Object object, Collection<ConfigAttribute> configAttributes)
             throws AccessDeniedException, InsufficientAuthenticationException {
+
         if (!(authentication instanceof JwtAuthenticationToken)) {
             throw new AccessDeniedException("Not a JwtAuthenticationToken");
         }
 
         JwtAuthenticationToken jwtToken = (JwtAuthenticationToken) authentication;
-        boolean hasRole = jwtToken.getAuthorities().stream()
-                .anyMatch(a -> a.getAuthority().equals("ROLE_" + authorizedRole));
-        boolean hasAuthority = jwtToken.getAuthorities().stream()
-                .anyMatch(a -> a.getAuthority().equals("ORGID_" + authorizedOrgId));
-        if (!(hasRole && hasAuthority)) {
+
+        if (!hasRoleAndAuthority(jwtToken)) {
             throw new AccessDeniedException("Access is denied. Not correct org or role");
         }
 
-        Jwt principal = (Jwt) jwtToken.getPrincipal();
-        FintJwtEndUserPrincipal fintJwtEndUserPrincipal = FintJwtEndUserPrincipal.from(principal);
-        String userName = fintJwtEndUserPrincipal.getMail() != null ? fintJwtEndUserPrincipal.getMail() : "";
-
-        String principalName = (String) principal.getClaims().get("principalName");
-        log.info("Fant principalName {}", principalName);
-
-        ServletRequestAttributes sra = (ServletRequestAttributes) RequestContextHolder.getRequestAttributes();
-
-        log.info("Request method {}", sra.getRequest().getMethod());
-        log.info("Request path {}", sra.getRequest().getRequestURI());
+        String userName = getUserNameFromToken(jwtToken);
 
         boolean authenticated = authentication.isAuthenticated();
-        log.info("Authenticated {}", authenticated);
+        log.info("User {} got authentication result {}", userName, authenticated);
 
-        log.info("Checking if user is authorized in opa with username {}", userName);
-
-        boolean authorized = authorizationClient.isAuthorized(userName, sra.getRequest().getMethod());
+        boolean authorized = authorizationClient.isAuthorized(userName, getRequestMethod());
 
         if (!authorized) {
-            throw new AccessDeniedException("Access is denied");
+            throw new AccessDeniedException("User not authorized, access is denied");
         }
+    }
+
+    private static String getRequestMethod() {
+        ServletRequestAttributes sra = (ServletRequestAttributes) RequestContextHolder.getRequestAttributes();
+        log.info("Request method {}", sra.getRequest().getMethod());
+        log.info("Request path {}", sra.getRequest().getRequestURI());
+        return sra.getRequest().getMethod();
+    }
+
+    private String getUserNameFromToken(JwtAuthenticationToken jwtToken) {
+        Jwt principal = (Jwt) jwtToken.getPrincipal();
+        FintJwtEndUserPrincipal fintJwtEndUserPrincipal = FintJwtEndUserPrincipal.from(principal);
+        return fintJwtEndUserPrincipal.getMail() != null ? fintJwtEndUserPrincipal.getMail() : "";
     }
 
     @Override
@@ -81,5 +80,22 @@ public class OpaAuthorizationManager implements AccessDecisionManager {
     @Override
     public boolean supports(Class<?> clazz) {
         return true;
+    }
+
+    private boolean hasRoleAndAuthority(JwtAuthenticationToken jwtToken) {
+        boolean hasRole = jwtToken.getAuthorities().stream()
+                .anyMatch(a -> a.getAuthority().equals("ROLE_" + authorizedRole));
+        boolean hasAuthority = jwtToken.getAuthorities().stream()
+                .anyMatch(a -> a.getAuthority().equals("ORGID_" + authorizedOrgId));
+
+        return hasRole && hasAuthority;
+    }
+
+    protected void setAuthorizedRole(String authorizedRole) {
+        this.authorizedRole = authorizedRole;
+    }
+
+    protected void setAuthorizedOrgId(String authorizedOrgId) {
+        this.authorizedOrgId = authorizedOrgId;
     }
 }

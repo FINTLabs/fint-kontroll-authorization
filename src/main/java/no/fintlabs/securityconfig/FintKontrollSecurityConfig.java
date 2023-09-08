@@ -1,6 +1,6 @@
 package no.fintlabs.securityconfig;
 
-import no.fintlabs.opa.OpaAuthorizationManager;
+import no.fintlabs.opa.KontrollAuthorizationManager;
 import no.fintlabs.util.JwtUserConverter;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
@@ -15,7 +15,7 @@ import org.springframework.security.web.SecurityFilterChain;
 public class FintKontrollSecurityConfig {
 
     @Autowired
-    private OpaAuthorizationManager opaAuthorizationManager;
+    private KontrollAuthorizationManager kontrollAuthorizationManager;
 
     @Value("${fint.integration.service.authorized-role:${fint.integration.service.authorized-role:rolle}}")
     private String authorizedRole;
@@ -26,7 +26,7 @@ public class FintKontrollSecurityConfig {
     public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
         http
                 .authorizeRequests()
-                .accessDecisionManager(opaAuthorizationManager)
+                .accessDecisionManager(kontrollAuthorizationManager)
                 .antMatchers("/**")
                 .authenticated()
                 .and()
