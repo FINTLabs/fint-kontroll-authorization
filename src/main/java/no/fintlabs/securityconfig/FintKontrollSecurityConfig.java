@@ -3,7 +3,6 @@ package no.fintlabs.securityconfig;
 import no.fintlabs.opa.KontrollAuthorizationManager;
 import no.fintlabs.util.JwtUserConverter;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
@@ -16,11 +15,6 @@ public class FintKontrollSecurityConfig {
 
     @Autowired
     private KontrollAuthorizationManager kontrollAuthorizationManager;
-
-    @Value("${fint.integration.service.authorized-role:${fint.integration.service.authorized-role:rolle}}")
-    private String authorizedRole;
-    @Value("${fint.integration.service.authorized-org-id:vigo.no}")
-    private String authorizedOrgId;
 
     @Bean
     public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {

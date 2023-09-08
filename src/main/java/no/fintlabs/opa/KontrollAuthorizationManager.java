@@ -88,7 +88,9 @@ public class KontrollAuthorizationManager implements AccessDecisionManager {
         boolean hasAuthority = jwtToken.getAuthorities().stream()
                 .anyMatch(a -> a.getAuthority().equals("ORGID_" + authorizedOrgId));
 
-        return hasRole && hasAuthority;
+//        return hasRole && hasAuthority;
+        //TODO: Enable when viken is active
+        return true;
     }
 
     protected void setAuthorizedRole(String authorizedRole) {
