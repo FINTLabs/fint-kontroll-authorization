@@ -37,13 +37,20 @@ public class KontrollAuthorizationManager implements AccessDecisionManager {
     public void decide(Authentication authentication, Object object, Collection<ConfigAttribute> configAttributes)
             throws AccessDeniedException, InsufficientAuthenticationException {
 
+        if(getRequestPath().contains("/swagger-ui") || getRequestPath().contains("/api-docs")) {
+            log.info("Swagger or api-docs, skipping authorization");
+            return;
+        }
+
         if (!(authentication instanceof JwtAuthenticationToken)) {
+            log.info("Illegal jwt token");
             throw new AccessDeniedException("Not a JwtAuthenticationToken");
         }
 
         JwtAuthenticationToken jwtToken = (JwtAuthenticationToken) authentication;
 
         if (!hasRoleAndAuthority(jwtToken)) {
+            log.info("Access denied, not correct role or org");
             throw new AccessDeniedException("Access is denied. Not correct org or role");
         }
 
@@ -55,6 +62,7 @@ public class KontrollAuthorizationManager implements AccessDecisionManager {
         boolean authorized = authorizationClient.isAuthorized(userName, getRequestMethod());
 
         if (!authorized) {
+            log.info("User not authorized, access denied");
             throw new AccessDeniedException("User not authorized, access is denied");
         }
     }
@@ -64,6 +72,12 @@ public class KontrollAuthorizationManager implements AccessDecisionManager {
         log.info("Request method {}", sra.getRequest().getMethod());
         log.info("Request path {}", sra.getRequest().getRequestURI());
         return sra.getRequest().getMethod();
+    }
+
+    private static String getRequestPath() {
+        ServletRequestAttributes sra = (ServletRequestAttributes) RequestContextHolder.getRequestAttributes();
+        log.info("Request path {}", sra.getRequest().getRequestURI());
+        return sra.getRequest().getRequestURI();
     }
 
     private String getUserNameFromToken(JwtAuthenticationToken jwtToken) {

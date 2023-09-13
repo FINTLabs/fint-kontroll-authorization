@@ -52,6 +52,8 @@ public class KontrollAuthorizationManagerTest {
     public void testDecide_Authorized() {
         setupAuthorizedUser();
 
+        when(httpServletRequest.getRequestURI()).thenReturn("/api/orgunits");
+
         assertDoesNotThrow(() -> {
             kontrollAuthorizationManager.decide(jwtAuthenticationToken, new Object(), mock(Collection.class));
         });
@@ -60,6 +62,8 @@ public class KontrollAuthorizationManagerTest {
     @Test
     public void testDecide_Unauthorized() {
         setupUnAuthorizedUser();
+
+        when(httpServletRequest.getRequestURI()).thenReturn("/testunauthorized");
 
         assertThrows(AccessDeniedException.class, () -> {
             kontrollAuthorizationManager.decide(jwtAuthenticationToken, new Object(), mock(Collection.class));
@@ -70,9 +74,18 @@ public class KontrollAuthorizationManagerTest {
     public void testDecide_NotJwtAuthentication() {
         Authentication notJwtAuth = mock(Authentication.class);
 
-        assertThrows(AccessDeniedException.class, () -> {
-            kontrollAuthorizationManager.decide(notJwtAuth, new Object(), mock(Collection.class));
-        });
+        when(httpServletRequest.getRequestURI()).thenReturn("/api/orgunits");
+
+        assertThrows(AccessDeniedException.class, () -> kontrollAuthorizationManager.decide(notJwtAuth, new Object(), mock(Collection.class)));
+    }
+
+    @Test
+    public void testDecide_Swagger() {
+        Authentication notJwtAuth = mock(Authentication.class);
+
+        when(httpServletRequest.getRequestURI()).thenReturn("/swagger-ui");
+
+        assertDoesNotThrow(() -> kontrollAuthorizationManager.decide(notJwtAuth, new Object(), mock(Collection.class)));
     }
 
     private void setupUnAuthorizedUser() {

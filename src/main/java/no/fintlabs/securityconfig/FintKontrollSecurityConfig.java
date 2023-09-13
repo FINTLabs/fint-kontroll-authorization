@@ -20,9 +20,11 @@ public class FintKontrollSecurityConfig {
     public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
         http
                 .authorizeRequests()
+                .antMatchers("/swagger-ui/**", "/swagger-ui**", "/api/api-docs/**", "/api/api-docs**").permitAll()
+                .anyRequest().authenticated()
+                .and()
+                .authorizeRequests()
                 .accessDecisionManager(kontrollAuthorizationManager)
-                .antMatchers("/**")
-                .authenticated()
                 .and()
                 .oauth2ResourceServer((resourceServer) -> resourceServer
                         .jwt()
