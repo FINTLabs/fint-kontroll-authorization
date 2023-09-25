@@ -19,16 +19,13 @@ public class FintKontrollSecurityConfig {
     @Bean
     public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
         http
-                .authorizeRequests()
-                .antMatchers("/swagger-ui/**", "/swagger-ui**", "/api/api-docs/**", "/api/api-docs**").permitAll()
-                .anyRequest().authenticated()
-                .and()
-                .authorizeRequests()
-                .accessDecisionManager(kontrollAuthorizationManager)
-                .and()
+                .authorizeHttpRequests(authz -> authz
+                        .requestMatchers("/swagger-ui/**", "/swagger-ui**", "/api/api-docs/**", "/api/api-docs**").permitAll()
+                        .anyRequest().access(kontrollAuthorizationManager)
+                )
                 .oauth2ResourceServer((resourceServer) -> resourceServer
-                        .jwt()
-                        .jwtAuthenticationConverter(new JwtUserConverter()));
+                        .jwt(jwt -> jwt
+                                .jwtAuthenticationConverter(new JwtUserConverter())));
         return http.build();
     }
 }

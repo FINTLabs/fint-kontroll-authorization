@@ -5,23 +5,21 @@ import lombok.extern.slf4j.Slf4j;
 import no.vigoiks.resourceserver.security.FintJwtEndUserPrincipal;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
-import org.springframework.security.access.AccessDecisionManager;
 import org.springframework.security.access.AccessDeniedException;
-import org.springframework.security.access.ConfigAttribute;
-import org.springframework.security.authentication.InsufficientAuthenticationException;
+import org.springframework.security.authorization.AuthorizationDecision;
+import org.springframework.security.authorization.AuthorizationManager;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.oauth2.jwt.Jwt;
 import org.springframework.security.oauth2.server.resource.authentication.JwtAuthenticationToken;
+import org.springframework.security.web.access.intercept.RequestAuthorizationContext;
 import org.springframework.stereotype.Component;
-import org.springframework.web.context.request.RequestContextHolder;
-import org.springframework.web.context.request.ServletRequestAttributes;
 
-import java.util.Collection;
+import java.util.function.Supplier;
 
 @Slf4j
 @RequiredArgsConstructor
 @Component
-public class KontrollAuthorizationManager implements AccessDecisionManager {
+public final class KontrollAuthorizationManager implements AuthorizationManager<RequestAuthorizationContext> {
 
     @Autowired
     private AuthorizationClient authorizationClient;
@@ -34,20 +32,18 @@ public class KontrollAuthorizationManager implements AccessDecisionManager {
 
 
     @Override
-    public void decide(Authentication authentication, Object object, Collection<ConfigAttribute> configAttributes)
-            throws AccessDeniedException, InsufficientAuthenticationException {
+    public AuthorizationDecision check(Supplier<Authentication> auth, RequestAuthorizationContext requestContext) {
 
-        if(getRequestPath().contains("/swagger-ui") || getRequestPath().contains("/api-docs")) {
+        if(getRequestPath(requestContext).contains("/swagger-ui") || getRequestPath(requestContext).contains("/api-docs")) {
             log.info("Swagger or api-docs, skipping authorization");
-            return;
+            return new AuthorizationDecision(true);
         }
 
-        if (!(authentication instanceof JwtAuthenticationToken)) {
-            log.info("Illegal jwt token");
-            throw new AccessDeniedException("Not a JwtAuthenticationToken");
+        Authentication authentication = auth.get();
+        if (!(authentication instanceof final JwtAuthenticationToken jwtToken)) {
+            log.info("Illegal jwt token: " + authentication.getClass().getName());
+            throw new AccessDeniedException("Access denied, illegal JwtAuthenticationToken: " + authentication.getClass().getName());
         }
-
-        JwtAuthenticationToken jwtToken = (JwtAuthenticationToken) authentication;
 
         if (!hasRoleAndAuthority(jwtToken)) {
             log.info("Access denied, not correct role or org");
@@ -59,23 +55,23 @@ public class KontrollAuthorizationManager implements AccessDecisionManager {
         boolean authenticated = authentication.isAuthenticated();
         log.info("User {} got authentication result {}", userName, authenticated);
 
-        boolean authorized = authorizationClient.isAuthorized(userName, getRequestMethod());
+        boolean authorized = authorizationClient.isAuthorized(userName, getRequestMethod(requestContext));
 
         if (!authorized) {
             log.info("User not authorized, access denied");
             throw new AccessDeniedException("User not authorized, access is denied");
         }
+
+        return new AuthorizationDecision(true);
     }
 
-    private static String getRequestMethod() {
-        ServletRequestAttributes sra = (ServletRequestAttributes) RequestContextHolder.getRequestAttributes();
+    private static String getRequestMethod(RequestAuthorizationContext sra) {
         log.info("Request method {}", sra.getRequest().getMethod());
         log.info("Request path {}", sra.getRequest().getRequestURI());
         return sra.getRequest().getMethod();
     }
 
-    private static String getRequestPath() {
-        ServletRequestAttributes sra = (ServletRequestAttributes) RequestContextHolder.getRequestAttributes();
+    private static String getRequestPath(RequestAuthorizationContext sra) {
         log.info("Request path {}", sra.getRequest().getRequestURI());
         return sra.getRequest().getRequestURI();
     }
@@ -84,16 +80,6 @@ public class KontrollAuthorizationManager implements AccessDecisionManager {
         Jwt principal = (Jwt) jwtToken.getPrincipal();
         FintJwtEndUserPrincipal fintJwtEndUserPrincipal = FintJwtEndUserPrincipal.from(principal);
         return fintJwtEndUserPrincipal.getMail() != null ? fintJwtEndUserPrincipal.getMail() : "";
-    }
-
-    @Override
-    public boolean supports(ConfigAttribute attribute) {
-        return true;
-    }
-
-    @Override
-    public boolean supports(Class<?> clazz) {
-        return true;
     }
 
     private boolean hasRoleAndAuthority(JwtAuthenticationToken jwtToken) {

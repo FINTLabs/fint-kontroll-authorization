@@ -1,5 +1,6 @@
 package no.fintlabs.opa;
 
+import jakarta.servlet.http.HttpServletRequest;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -7,17 +8,16 @@ import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.security.access.AccessDeniedException;
+import org.springframework.security.authentication.TestingAuthenticationToken;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.GrantedAuthority;
 import org.springframework.security.core.authority.SimpleGrantedAuthority;
 import org.springframework.security.oauth2.jwt.Jwt;
 import org.springframework.security.oauth2.server.resource.authentication.JwtAuthenticationToken;
-import org.springframework.web.context.request.RequestContextHolder;
-import org.springframework.web.context.request.ServletRequestAttributes;
+import org.springframework.security.web.access.intercept.RequestAuthorizationContext;
 
-import javax.servlet.http.HttpServletRequest;
-import java.util.Collection;
 import java.util.Set;
+import java.util.function.Supplier;
 
 import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
 import static org.junit.jupiter.api.Assertions.assertThrows;
@@ -35,64 +35,77 @@ public class KontrollAuthorizationManagerTest {
     private AuthorizationClient authorizationClient;
 
     @Mock
-    private JwtAuthenticationToken jwtAuthenticationToken;
+    private Supplier<JwtAuthenticationToken> jwtAuthenticationToken;
 
     @Mock
     private Jwt principal;
 
+    @Mock
+    private RequestAuthorizationContext requestAuthorizationContext;
+
+    private Supplier<Authentication> auth;
+
+    @Mock
     private HttpServletRequest httpServletRequest;
 
     @BeforeEach
     public void setUp() {
         httpServletRequest = mock(HttpServletRequest.class);
-        RequestContextHolder.setRequestAttributes(new ServletRequestAttributes(httpServletRequest));
+        when(requestAuthorizationContext.getRequest()).thenReturn(httpServletRequest);
     }
 
+    private void setupAuth() {
+        JwtAuthenticationToken jwtAuthenticationTokenMock = mock(JwtAuthenticationToken.class);
+        when(jwtAuthenticationToken.get()).thenReturn(jwtAuthenticationTokenMock);
+        auth = () -> jwtAuthenticationToken.get();
+    }
     @Test
     public void testDecide_Authorized() {
+        setupAuth();
         setupAuthorizedUser();
 
         when(httpServletRequest.getRequestURI()).thenReturn("/api/orgunits");
 
         assertDoesNotThrow(() -> {
-            kontrollAuthorizationManager.decide(jwtAuthenticationToken, new Object(), mock(Collection.class));
+            kontrollAuthorizationManager.check(auth, requestAuthorizationContext);
         });
     }
 
     @Test
     public void testDecide_Unauthorized() {
+        setupAuth();
         setupUnAuthorizedUser();
 
         when(httpServletRequest.getRequestURI()).thenReturn("/testunauthorized");
 
         assertThrows(AccessDeniedException.class, () -> {
-            kontrollAuthorizationManager.decide(jwtAuthenticationToken, new Object(), mock(Collection.class));
+            kontrollAuthorizationManager.check(auth, requestAuthorizationContext);
         });
     }
 
     @Test
     public void testDecide_NotJwtAuthentication() {
-        Authentication notJwtAuth = mock(Authentication.class);
+        Supplier<Authentication> notJwtAuth = () -> new TestingAuthenticationToken(null, null);
 
         when(httpServletRequest.getRequestURI()).thenReturn("/api/orgunits");
 
-        assertThrows(AccessDeniedException.class, () -> kontrollAuthorizationManager.decide(notJwtAuth, new Object(), mock(Collection.class)));
+        assertThrows(AccessDeniedException.class, () -> kontrollAuthorizationManager.check(notJwtAuth, requestAuthorizationContext));
     }
 
     @Test
     public void testDecide_Swagger() {
-        Authentication notJwtAuth = mock(Authentication.class);
+        Supplier<Authentication> notJwtAuth = () -> new TestingAuthenticationToken(null, null);
 
         when(httpServletRequest.getRequestURI()).thenReturn("/swagger-ui");
 
-        assertDoesNotThrow(() -> kontrollAuthorizationManager.decide(notJwtAuth, new Object(), mock(Collection.class)));
+        assertDoesNotThrow(() -> kontrollAuthorizationManager.check(notJwtAuth, requestAuthorizationContext));
     }
 
     private void setupUnAuthorizedUser() {
         expectRoleAndOrg();
 
         when(httpServletRequest.getMethod()).thenReturn("GET");
-        when(jwtAuthenticationToken.getPrincipal()).thenReturn(principal);
+        when(jwtAuthenticationToken.get().getPrincipal()).thenReturn(principal);
         when(authorizationClient.isAuthorized(anyString(), anyString())).thenReturn(false);
     }
 
@@ -103,14 +116,14 @@ public class KontrollAuthorizationManagerTest {
         kontrollAuthorizationManager.setAuthorizedRole("rolle");
         kontrollAuthorizationManager.setAuthorizedOrgId("vigo.no");
 
-        when(jwtAuthenticationToken.getAuthorities()).thenReturn(Set.of(grantedAuthorityRole, grantedAuthorityOrg));
+        when(jwtAuthenticationToken.get().getAuthorities()).thenReturn(Set.of(grantedAuthorityRole, grantedAuthorityOrg));
     }
 
     private void setupAuthorizedUser() {
         expectRoleAndOrg();
 
         when(httpServletRequest.getMethod()).thenReturn("GET");
-        when(jwtAuthenticationToken.getPrincipal()).thenReturn(principal);
+        when(jwtAuthenticationToken.get().getPrincipal()).thenReturn(principal);
         when(authorizationClient.isAuthorized(anyString(), anyString())).thenReturn(true);
     }
 
