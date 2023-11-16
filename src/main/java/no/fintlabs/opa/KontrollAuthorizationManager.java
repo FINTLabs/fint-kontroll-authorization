@@ -27,26 +27,36 @@ public final class KontrollAuthorizationManager implements AuthorizationManager<
     @Value("${fint.kontroll.authorization.authorized-role:rolle}")
     private String authorizedRole;
 
+    @Value("${fint.kontroll.authorization.authorized-admin-role:admin}")
+    private String adminRole;
+
     @Value("${fint.kontroll.authorization.authorized-org-id:vigo.no}")
     private String authorizedOrgId;
 
+    @Value("${fint.relations.default-base-url:localhost}")
+    private String baseUrl;
 
     @Override
     public AuthorizationDecision check(Supplier<Authentication> auth, RequestAuthorizationContext requestContext) {
 
         if(getRequestPath(requestContext).contains("/swagger-ui") || getRequestPath(requestContext).contains("/api-docs")) {
-            log.info("Swagger or api-docs, skipping authorization");
+            log.debug("Swagger or api-docs, skipping authorization");
             return new AuthorizationDecision(true);
         }
 
         Authentication authentication = auth.get();
         if (!(authentication instanceof final JwtAuthenticationToken jwtToken)) {
-            log.info("Illegal jwt token: " + authentication.getClass().getName());
+            log.warn("Illegal jwt token: " + authentication.getClass().getName());
             throw new AccessDeniedException("Access denied, illegal JwtAuthenticationToken: " + authentication.getClass().getName());
         }
 
-        if (!hasRoleAndAuthority(jwtToken)) {
-            log.info("Access denied, not correct role or org");
+        if (hasAdminRole(jwtToken)) {
+            log.info("User has admin role, access granted");
+            return new AuthorizationDecision(true);
+        }
+
+        if (!hasAdminRole(jwtToken) && !hasRoleAndAuthority(jwtToken)) {
+            log.warn("Access denied, not correct role or org");
             throw new AccessDeniedException("Access is denied. Not correct org or role");
         }
 
@@ -66,13 +76,13 @@ public final class KontrollAuthorizationManager implements AuthorizationManager<
     }
 
     private static String getRequestMethod(RequestAuthorizationContext sra) {
-        log.info("Request method {}", sra.getRequest().getMethod());
-        log.info("Request path {}", sra.getRequest().getRequestURI());
+        log.debug("Request method {}", sra.getRequest().getMethod());
+        log.debug("Request path {}", sra.getRequest().getRequestURI());
         return sra.getRequest().getMethod();
     }
 
     private static String getRequestPath(RequestAuthorizationContext sra) {
-        log.info("Request path {}", sra.getRequest().getRequestURI());
+        log.debug("Request path {}", sra.getRequest().getRequestURI());
         return sra.getRequest().getRequestURI();
     }
 
@@ -89,8 +99,18 @@ public final class KontrollAuthorizationManager implements AuthorizationManager<
                 .anyMatch(a -> a.getAuthority().equals("ORGID_" + authorizedOrgId));
 
 //        return hasRole && hasAuthority;
-        //TODO: Enable when viken is active
+        // TODO: Enable when viken is active
         return true;
+    }
+
+    private boolean hasAdminRole(JwtAuthenticationToken jwtToken) {
+        log.info("Auth: Found base url: {}", baseUrl);
+        log.info("Auth: Found admin role: {}", adminRole);
+
+        boolean hasAdminRole = jwtToken.getAuthorities().stream()
+                .anyMatch(a -> a.getAuthority().equals("ROLE_" + adminRole));
+
+        return hasRoleAndAuthority(jwtToken) && hasAdminRole;
     }
 
     protected void setAuthorizedRole(String authorizedRole) {
