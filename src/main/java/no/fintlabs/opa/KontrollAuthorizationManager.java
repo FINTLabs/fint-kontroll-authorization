@@ -50,14 +50,16 @@ public final class KontrollAuthorizationManager implements AuthorizationManager<
             throw new AccessDeniedException("Access denied, illegal JwtAuthenticationToken: " + authentication.getClass().getName());
         }
 
-        if (hasAdminRole(jwtToken)) {
-            log.info("User has admin role, access granted");
-            return new AuthorizationDecision(true);
-        }
+        if(!isBeta()) {
+            if (hasAdminRole(jwtToken)) {
+                log.info("User has admin role, access granted");
+                return new AuthorizationDecision(true);
+            }
 
-        if (!hasAdminRole(jwtToken) && !hasRoleAndAuthority(jwtToken)) {
-            log.warn("Access denied, not correct role or org");
-            throw new AccessDeniedException("Access is denied. Not correct org or role");
+            if (!hasRoleAndAuthority(jwtToken)) {
+                log.warn("Access denied, not correct role or org");
+                throw new AccessDeniedException("Access is denied. Not correct org or role");
+            }
         }
 
         String userName = getUserNameFromToken(jwtToken);
@@ -73,6 +75,17 @@ public final class KontrollAuthorizationManager implements AuthorizationManager<
         }
 
         return new AuthorizationDecision(true);
+    }
+
+    private boolean isBeta() {
+        log.info("Environment is beta: {}", baseUrl);
+
+        if (baseUrl.equals("localhost") || baseUrl.contains("/beta.")) {
+            log.info("Auth: Is beta");
+            return true;
+        }
+
+        return false;
     }
 
     private static String getRequestMethod(RequestAuthorizationContext sra) {
@@ -98,13 +111,10 @@ public final class KontrollAuthorizationManager implements AuthorizationManager<
         boolean hasAuthority = jwtToken.getAuthorities().stream()
                 .anyMatch(a -> a.getAuthority().equals("ORGID_" + authorizedOrgId));
 
-//        return hasRole && hasAuthority;
-        // TODO: Enable when viken is active
-        return true;
+        return hasRole && hasAuthority;
     }
 
     private boolean hasAdminRole(JwtAuthenticationToken jwtToken) {
-        log.info("Auth: Found base url: {}", baseUrl);
         log.info("Auth: Found admin role: {}", adminRole);
 
         boolean hasAdminRole = jwtToken.getAuthorities().stream()
