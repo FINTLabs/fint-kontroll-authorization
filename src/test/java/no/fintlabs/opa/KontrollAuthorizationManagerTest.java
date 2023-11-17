@@ -52,6 +52,7 @@ public class KontrollAuthorizationManagerTest {
     public void setUp() {
         httpServletRequest = mock(HttpServletRequest.class);
         when(requestAuthorizationContext.getRequest()).thenReturn(httpServletRequest);
+        kontrollAuthorizationManager.setBaseUrl("api");
     }
 
     private void setupAuth() {

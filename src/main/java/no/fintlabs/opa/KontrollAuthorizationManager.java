@@ -130,4 +130,8 @@ public final class KontrollAuthorizationManager implements AuthorizationManager<
     protected void setAuthorizedOrgId(String authorizedOrgId) {
         this.authorizedOrgId = authorizedOrgId;
     }
+
+    protected void setBaseUrl(String baseUrl) {
+        this.baseUrl = baseUrl;
+    }
 }
