@@ -118,10 +118,8 @@ public final class KontrollAuthorizationManager implements AuthorizationManager<
         log.info("Auth: Found admin role in env: {}", adminRole);
         jwtToken.getAuthorities().forEach(a -> log.info("Role in jwt: {}", a.getAuthority()));
 
-        boolean hasAdminRole = jwtToken.getAuthorities().stream()
+        return jwtToken.getAuthorities().stream()
                 .anyMatch(a -> a.getAuthority().equals("ROLE_" + adminRole));
-
-        return hasRoleAndAuthority(jwtToken) && hasAdminRole;
     }
 
     protected void setAuthorizedRole(String authorizedRole) {
