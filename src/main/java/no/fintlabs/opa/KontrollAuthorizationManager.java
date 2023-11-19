@@ -78,7 +78,7 @@ public final class KontrollAuthorizationManager implements AuthorizationManager<
     }
 
     private boolean isBeta() {
-        log.info("Environment is beta: {}", baseUrl);
+        log.info("Environment is: {}", baseUrl);
 
         if (baseUrl.equals("localhost") || baseUrl.contains("/beta.")) {
             log.info("Auth: Is beta");
@@ -115,7 +115,8 @@ public final class KontrollAuthorizationManager implements AuthorizationManager<
     }
 
     private boolean hasAdminRole(JwtAuthenticationToken jwtToken) {
-        log.info("Auth: Found admin role: {}", adminRole);
+        log.info("Auth: Found admin role in env: {}", adminRole);
+        jwtToken.getAuthorities().forEach(a -> log.info("Role in jwt: {}", a.getAuthority()));
 
         boolean hasAdminRole = jwtToken.getAuthorities().stream()
                 .anyMatch(a -> a.getAuthority().equals("ROLE_" + adminRole));
