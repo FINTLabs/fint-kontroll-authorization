@@ -50,8 +50,23 @@ public final class KontrollAuthorizationManager implements AuthorizationManager<
             throw new AccessDeniedException("Access denied, illegal JwtAuthenticationToken: " + authentication.getClass().getName());
         }
 
+        String userName = getUserNameFromToken(jwtToken);
+        boolean authenticated = authentication.isAuthenticated();
+        log.info("User {} got authentication result {}", userName, authenticated);
+
+        if(!authenticated) {
+            log.info("User not authenticated, access denied");
+            throw new AccessDeniedException("User not authenticated, access is denied");
+        }
+
         if(!isBeta()) {
-            if (hasAdminRole(jwtToken)) {
+            if (getRequestPath(requestContext).contains("/accessmanagement") && !hasAdminRole(jwtToken)) {
+                log.info("Access denied, not correct role for accessmanagement");
+                throw new AccessDeniedException("Access is denied.");
+
+            }
+
+            if (hasAdminRole(jwtToken) && hasCorrectOrgId(jwtToken)) {
                 log.info("User has admin role, access granted");
                 return new AuthorizationDecision(true);
             }
@@ -61,11 +76,6 @@ public final class KontrollAuthorizationManager implements AuthorizationManager<
                 throw new AccessDeniedException("Access is denied. Not correct org or role");
             }
         }
-
-        String userName = getUserNameFromToken(jwtToken);
-
-        boolean authenticated = authentication.isAuthenticated();
-        log.info("User {} got authentication result {}", userName, authenticated);
 
         boolean authorized = authorizationClient.isAuthorized(userName, getRequestMethod(requestContext));
 
@@ -108,10 +118,14 @@ public final class KontrollAuthorizationManager implements AuthorizationManager<
     private boolean hasRoleAndAuthority(JwtAuthenticationToken jwtToken) {
         boolean hasRole = jwtToken.getAuthorities().stream()
                 .anyMatch(a -> a.getAuthority().equals("ROLE_" + authorizedRole));
-        boolean hasAuthority = jwtToken.getAuthorities().stream()
-                .anyMatch(a -> a.getAuthority().equals("ORGID_" + authorizedOrgId));
+        boolean hasAuthority = hasCorrectOrgId(jwtToken);
 
         return hasRole && hasAuthority;
+    }
+
+    private boolean hasCorrectOrgId(JwtAuthenticationToken jwtToken) {
+        return jwtToken.getAuthorities().stream()
+                .anyMatch(a -> a.getAuthority().equals("ORGID_" + authorizedOrgId));
     }
 
     private boolean hasAdminRole(JwtAuthenticationToken jwtToken) {
@@ -120,6 +134,10 @@ public final class KontrollAuthorizationManager implements AuthorizationManager<
 
         return jwtToken.getAuthorities().stream()
                 .anyMatch(a -> a.getAuthority().equals("ROLE_" + adminRole));
+    }
+
+    protected void setAdminRole(String adminRole) {
+        this.adminRole = adminRole;
     }
 
     protected void setAuthorizedRole(String authorizedRole) {

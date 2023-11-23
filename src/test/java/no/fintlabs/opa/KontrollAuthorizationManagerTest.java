@@ -66,6 +66,7 @@ public class KontrollAuthorizationManagerTest {
         setupAuthorizedUser();
 
         when(httpServletRequest.getRequestURI()).thenReturn("/api/orgunits");
+        when(auth.get().isAuthenticated()).thenReturn(true);
 
         assertDoesNotThrow(() -> {
             kontrollAuthorizationManager.check(auth, requestAuthorizationContext);
@@ -73,15 +74,52 @@ public class KontrollAuthorizationManagerTest {
     }
 
     @Test
+    public void testDecide_Authorized_adminRole() {
+        setupAuth();
+        setupAuthorizedAdmin();
+
+        when(httpServletRequest.getRequestURI()).thenReturn("/api/orgunits");
+        when(auth.get().isAuthenticated()).thenReturn(true);
+
+        assertDoesNotThrow(() -> {
+            kontrollAuthorizationManager.check(auth, requestAuthorizationContext);
+        });
+    }
+
+    @Test
+    public void testDecide_Authorized_accessmanagement_adminRole() {
+        setupAuth();
+        setupAuthorizedAdmin();
+
+        when(httpServletRequest.getRequestURI()).thenReturn("/api/accessmanagement");
+        when(auth.get().isAuthenticated()).thenReturn(true);
+
+        assertDoesNotThrow(() -> {
+            kontrollAuthorizationManager.check(auth, requestAuthorizationContext);
+        });
+    }
+
+    @Test
+    public void testDecide_UnAuthorized_accessmanagement_not_admin() {
+        setupAuth();
+        when(jwtAuthenticationToken.get().getPrincipal()).thenReturn(principal);
+
+        when(httpServletRequest.getRequestURI()).thenReturn("/api/accessmanagement");
+        when(auth.get().isAuthenticated()).thenReturn(true);
+
+        assertThrows(AccessDeniedException.class, () -> kontrollAuthorizationManager.check(auth, requestAuthorizationContext));
+    }
+
+    @Test
     public void testDecide_Unauthorized() {
         setupAuth();
         setupUnAuthorizedUser();
 
+        when(auth.get().isAuthenticated()).thenReturn(true);
+
         when(httpServletRequest.getRequestURI()).thenReturn("/testunauthorized");
 
-        assertThrows(AccessDeniedException.class, () -> {
-            kontrollAuthorizationManager.check(auth, requestAuthorizationContext);
-        });
+        assertThrows(AccessDeniedException.class, () -> kontrollAuthorizationManager.check(auth, requestAuthorizationContext));
     }
 
     @Test
@@ -110,6 +148,16 @@ public class KontrollAuthorizationManagerTest {
         when(authorizationClient.isAuthorized(anyString(), anyString())).thenReturn(false);
     }
 
+    private void expectAdminRoleAndOrg() {
+        GrantedAuthority grantedAuthorityRole = new SimpleGrantedAuthority("ROLE_admin");
+        GrantedAuthority grantedAuthorityOrg = new SimpleGrantedAuthority("ORGID_vigo.no");
+
+        kontrollAuthorizationManager.setAdminRole("admin");
+        kontrollAuthorizationManager.setAuthorizedOrgId("vigo.no");
+
+        when(jwtAuthenticationToken.get().getAuthorities()).thenReturn(Set.of(grantedAuthorityRole, grantedAuthorityOrg));
+    }
+
     private void expectRoleAndOrg() {
         GrantedAuthority grantedAuthorityRole = new SimpleGrantedAuthority("ROLE_rolle");
         GrantedAuthority grantedAuthorityOrg = new SimpleGrantedAuthority("ORGID_vigo.no");
@@ -120,12 +168,20 @@ public class KontrollAuthorizationManagerTest {
         when(jwtAuthenticationToken.get().getAuthorities()).thenReturn(Set.of(grantedAuthorityRole, grantedAuthorityOrg));
     }
 
-    private void setupAuthorizedUser() {
-        expectRoleAndOrg();
-
+    private void setupAuthorized() {
         when(httpServletRequest.getMethod()).thenReturn("GET");
         when(jwtAuthenticationToken.get().getPrincipal()).thenReturn(principal);
         when(authorizationClient.isAuthorized(anyString(), anyString())).thenReturn(true);
+    }
+
+    private void setupAuthorizedAdmin() {
+        expectAdminRoleAndOrg();
+        when(jwtAuthenticationToken.get().getPrincipal()).thenReturn(principal);
+    }
+
+    private void setupAuthorizedUser() {
+        expectRoleAndOrg();
+        setupAuthorized();
     }
 
 }
