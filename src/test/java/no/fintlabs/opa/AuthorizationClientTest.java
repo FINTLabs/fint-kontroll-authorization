@@ -57,13 +57,11 @@ public class AuthorizationClientTest {
         when(authenticationUtil.getUserName()).thenReturn(userName);
 
         Scope scope1 = Scope.builder()
-                .id("1")
                 .objectType("user")
                 .orgUnits(List.of("198", "2", "3"))
                 .build();
 
         Scope scope2 = Scope.builder()
-                .id("2")
                 .objectType("role")
                 .orgUnits(List.of("198", "2", "3"))
                 .build();
@@ -75,7 +73,6 @@ public class AuthorizationClientTest {
         List<Scope> foundScopes = authorizationClient.getUserScopes();
 
         assertEquals(2, foundScopes.size());
-        assertEquals("1", foundScopes.get(0).getId());
         assertEquals("user", foundScopes.get(0).getObjectType());
         assertEquals(3, foundScopes.get(0).getOrgUnits().size());
         assertEquals("198", foundScopes.get(0).getOrgUnits().get(0));

@@ -14,10 +14,13 @@ import org.springframework.stereotype.Component;
 import org.springframework.web.client.HttpClientErrorException;
 import org.springframework.web.client.RestTemplate;
 
+import java.util.ArrayList;
 import java.util.Collections;
+import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
-import java.util.Optional;
+import java.util.Set;
 
 
 @Slf4j
@@ -38,11 +41,24 @@ public class OpaApiClient {
         HttpEntity<Map<String, Object>> request = new HttpEntity<>(createOpaRequestData(user, "GET"), headers);
 
         try {
-            ResponseEntity<ScopesResponse> scopes = restTemplate.exchange("/scopes", HttpMethod.POST, request, ScopesResponse.class);
-            log.info("Got scopes from OPA: {}", scopes.getBody());
-            return Optional.ofNullable(scopes.getBody())
-                    .map(ScopesResponse::getScopes)
-                    .orElse(Collections.emptyList());
+            ResponseEntity<ScopesResponse> response = restTemplate.exchange("/scopes", HttpMethod.POST, request, ScopesResponse.class);
+            log.info("Got scopes from OPA: {}", response.getBody());
+
+            List<Scope> flattenedScopes = response.getBody().getScopes().stream()
+                    .flatMap(List::stream)
+                    .toList();
+
+            Map<String, Set<String>> groupedScopes = new HashMap<>();
+            for (Scope scope : flattenedScopes) {
+                groupedScopes.computeIfAbsent(scope.getObjectType(), k -> new HashSet<>()).addAll(scope.getOrgUnits());
+            }
+
+            List<Scope> mergedScopes = new ArrayList<>();
+            for (Map.Entry<String, Set<String>> entry : groupedScopes.entrySet()) {
+                mergedScopes.add(new Scope(entry.getKey(), new ArrayList<>(entry.getValue())));
+            }
+
+            return mergedScopes;
         } catch (HttpClientErrorException e) {
             log.warn("Could not fetch scopes for user {}. Response status: {}", user, e.getStatusCode());
         } catch (Exception e) {

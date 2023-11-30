@@ -40,7 +40,7 @@ public class OpaApiClientTest {
         String scopesResultJson = """
                  {
                     "result": [
-                        {
+                        [{
                             "id": "1",
                             "objecttype": "user",
                             "orgunits": [
@@ -66,7 +66,7 @@ public class OpaApiClientTest {
                                 "2",
                                 "3"
                             ]
-                        }
+                        }]
                     ]
                 }""";
         mockWebServer.enqueue(new MockResponse()
@@ -76,12 +76,116 @@ public class OpaApiClientTest {
         List<Scope> scopes = opaApiClient.getScopesForUser("john");
 
         assertEquals(3, scopes.size());
-        assertEquals("1", scopes.get(0).getId());
-        assertEquals("user", scopes.get(0).getObjectType());
+        assertEquals("role", scopes.get(0).getObjectType());
         assertEquals(3, scopes.get(0).getOrgUnits().size());
         assertEquals("198", scopes.get(0).getOrgUnits().get(0));
         assertEquals("2", scopes.get(0).getOrgUnits().get(1));
         assertEquals("3", scopes.get(0).getOrgUnits().get(2));
+
+        RecordedRequest recordedRequest = mockWebServer.takeRequest();
+        assertEquals("POST", recordedRequest.getMethod());
+        assertEquals("/scopes", recordedRequest.getPath());
+    }
+
+    @Test
+    public void testGetScopesForUserWhoHasMultipleRolesWithSameScopes() throws InterruptedException {
+        String scopesResultJson = """
+                {
+                    "result": [
+                        [
+                            {
+                                "id": "3",
+                                "objecttype": "resource",
+                                "orgunits": [
+                                    "198",
+                                    "153",
+                                    "6",
+                                    "1"
+                                ]
+                            },
+                            {
+                                "id": "7",
+                                "objecttype": "orgunit",
+                                "orgunits": [
+                                    "22",
+                                    "33",
+                                    "44",
+                                    "55"
+                                ]
+                            }
+                        ],
+                        [
+                            {
+                                "id": "4",
+                                "objecttype": "orgunit",
+                                "orgunits": [
+                                    "198",
+                                    "153",
+                                    "6",
+                                    "1"
+                                ]
+                            },
+                            {
+                                "id": "1",
+                                "objecttype": "user",
+                                "orgunits": [
+                                    "198",
+                                    "153",
+                                    "6",
+                                    "1"
+                                ]
+                            },
+                            {
+                                "id": "2",
+                                "objecttype": "role",
+                                "orgunits": [
+                                    "198",
+                                    "153",
+                                    "6",
+                                    "1"
+                                ]
+                            }
+                        ]
+                    ]
+                }""";
+        mockWebServer.enqueue(new MockResponse()
+                                      .setBody(scopesResultJson)
+                                      .addHeader("Content-Type", "application/json"));
+
+        List<Scope> scopes = opaApiClient.getScopesForUser("john");
+
+        assertEquals(4, scopes.size());
+        assertEquals("role", scopes.get(0).getObjectType());
+        assertEquals(4, scopes.get(0).getOrgUnits().size());
+        assertEquals("198", scopes.get(0).getOrgUnits().get(0));
+        assertEquals("1", scopes.get(0).getOrgUnits().get(1));
+        assertEquals("6", scopes.get(0).getOrgUnits().get(2));
+        assertEquals("153", scopes.get(0).getOrgUnits().get(3));
+
+        assertEquals("resource", scopes.get(1).getObjectType());
+        assertEquals(4, scopes.get(1).getOrgUnits().size());
+        assertEquals("198", scopes.get(1).getOrgUnits().get(0));
+        assertEquals("1", scopes.get(1).getOrgUnits().get(1));
+        assertEquals("6", scopes.get(1).getOrgUnits().get(2));
+        assertEquals("153", scopes.get(1).getOrgUnits().get(3));
+
+        assertEquals("orgunit", scopes.get(2).getObjectType());
+        assertEquals(8, scopes.get(2).getOrgUnits().size());
+        assertEquals("22", scopes.get(2).getOrgUnits().get(0));
+        assertEquals("33", scopes.get(2).getOrgUnits().get(1));
+        assertEquals("44", scopes.get(2).getOrgUnits().get(2));
+        assertEquals("55", scopes.get(2).getOrgUnits().get(3));
+        assertEquals("198", scopes.get(2).getOrgUnits().get(4));
+        assertEquals("1", scopes.get(2).getOrgUnits().get(5));
+        assertEquals("6", scopes.get(2).getOrgUnits().get(6));
+        assertEquals("153", scopes.get(2).getOrgUnits().get(7));
+
+        assertEquals("user", scopes.get(3).getObjectType());
+        assertEquals(4, scopes.get(3).getOrgUnits().size());
+        assertEquals("198", scopes.get(3).getOrgUnits().get(0));
+        assertEquals("1", scopes.get(3).getOrgUnits().get(1));
+        assertEquals("6", scopes.get(3).getOrgUnits().get(2));
+        assertEquals("153", scopes.get(3).getOrgUnits().get(3));
 
         RecordedRequest recordedRequest = mockWebServer.takeRequest();
         assertEquals("POST", recordedRequest.getMethod());

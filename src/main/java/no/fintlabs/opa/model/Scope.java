@@ -20,7 +20,7 @@ import java.util.List;
 @AllArgsConstructor
 @NoArgsConstructor
 public class Scope {
-    private String id;
+//    private String id;
 
     @JsonProperty("objecttype")
     private String objectType;

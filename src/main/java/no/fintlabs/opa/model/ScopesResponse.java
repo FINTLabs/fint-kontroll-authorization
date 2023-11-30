@@ -15,5 +15,5 @@ import java.util.List;
 public class ScopesResponse {
 
     @JsonProperty("result")
-    private List<Scope> scopes;
+    private List<List<Scope>> scopes;
 }
