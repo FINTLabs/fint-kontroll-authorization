@@ -4,6 +4,7 @@ import lombok.extern.slf4j.Slf4j;
 import no.fintlabs.opa.model.AllowResponse;
 import no.fintlabs.opa.model.OpaRequest;
 import no.fintlabs.opa.model.Scope;
+import no.fintlabs.opa.model.ScopesListResponse;
 import no.fintlabs.opa.model.ScopesResponse;
 import org.springframework.http.HttpEntity;
 import org.springframework.http.HttpHeaders;
@@ -20,6 +21,7 @@ import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import java.util.Set;
 
 
@@ -33,6 +35,8 @@ public class OpaApiClient {
         this.restTemplate = restTemplate;
     }
 
+    // Will be removed as soon as the new OPA API is in production
+    @Deprecated(forRemoval = true)
     public List<Scope> getScopesForUser(String user) {
         log.info("Getting scopes for user {}", user);
 
@@ -41,7 +45,29 @@ public class OpaApiClient {
         HttpEntity<Map<String, Object>> request = new HttpEntity<>(createOpaRequestData(user, "GET"), headers);
 
         try {
-            ResponseEntity<ScopesResponse> response = restTemplate.exchange("/scopes", HttpMethod.POST, request, ScopesResponse.class);
+            ResponseEntity<ScopesResponse> scopes = restTemplate.exchange("/scopes", HttpMethod.POST, request, ScopesResponse.class);
+            log.info("Got scopes from OPA: {}", scopes.getBody());
+            return Optional.ofNullable(scopes.getBody())
+                    .map(ScopesResponse::getScopes)
+                    .orElse(Collections.emptyList());
+        } catch (HttpClientErrorException e) {
+            log.warn("Could not fetch scopes for user {}. Response status: {}", user, e.getStatusCode());
+        } catch (Exception e) {
+            log.error("An error occurred while fetching scopes for user {}", user, e);
+        }
+
+        return Collections.emptyList();
+    }
+
+    public List<Scope> getScopesListForUser(String user) {
+        log.info("Getting scopes for user {}", user);
+
+        HttpHeaders headers = new HttpHeaders();
+        headers.setContentType(MediaType.APPLICATION_JSON);
+        HttpEntity<Map<String, Object>> request = new HttpEntity<>(createOpaRequestData(user, "GET"), headers);
+
+        try {
+            ResponseEntity<ScopesListResponse> response = restTemplate.exchange("/scopeslist", HttpMethod.POST, request, ScopesListResponse.class);
             log.info("Got scopes from OPA: {}", response.getBody());
 
             List<Scope> flattenedScopes = response.getBody().getScopes().stream()

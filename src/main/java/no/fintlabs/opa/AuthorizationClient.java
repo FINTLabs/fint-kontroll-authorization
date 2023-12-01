@@ -37,9 +37,29 @@ public class AuthorizationClient {
         }
     }
 
+    public List<Scope> getUserScopesList() {
+        log.info("Getting list of user scopes");
+        Boolean authenticated = authenticationUtil.isAuthenticated();
+        log.info("User is authenticated: {}", authenticated);
+
+        if (authenticated) {
+            log.info("User is authenticated, getting user scopes");
+            return lookupScopesList();
+        } else {
+            log.info("User is not authenticated");
+            return List.of();
+        }
+    }
+
     private List<Scope> lookupScopes() {
         String userName = authenticationUtil.getUserName();
         log.info("Looking up scopes for user {}", userName);
         return opaApiClient.getScopesForUser(userName);
+    }
+
+    private List<Scope> lookupScopesList() {
+        String userName = authenticationUtil.getUserName();
+        log.info("Looking up scopes for user {}", userName);
+        return opaApiClient.getScopesListForUser(userName);
     }
 }

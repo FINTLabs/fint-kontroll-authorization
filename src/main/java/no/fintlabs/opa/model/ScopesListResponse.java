@@ -12,8 +12,8 @@ import java.util.List;
 @Setter
 @EqualsAndHashCode
 @ToString
-public class ScopesResponse {
+public class ScopesListResponse {
 
     @JsonProperty("result")
-    private List<Scope> scopes;
+    private List<List<Scope>> scopes;
 }

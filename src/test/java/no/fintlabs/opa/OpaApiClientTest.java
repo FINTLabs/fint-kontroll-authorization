@@ -40,7 +40,7 @@ public class OpaApiClientTest {
         String scopesResultJson = """
                  {
                     "result": [
-                        [{
+                        {
                             "id": "1",
                             "objecttype": "user",
                             "orgunits": [
@@ -66,7 +66,7 @@ public class OpaApiClientTest {
                                 "2",
                                 "3"
                             ]
-                        }]
+                        }
                     ]
                 }""";
         mockWebServer.enqueue(new MockResponse()
@@ -76,7 +76,7 @@ public class OpaApiClientTest {
         List<Scope> scopes = opaApiClient.getScopesForUser("john");
 
         assertEquals(3, scopes.size());
-        assertEquals("role", scopes.get(0).getObjectType());
+        assertEquals("user", scopes.get(0).getObjectType());
         assertEquals(3, scopes.get(0).getOrgUnits().size());
         assertEquals("198", scopes.get(0).getOrgUnits().get(0));
         assertEquals("2", scopes.get(0).getOrgUnits().get(1));
@@ -152,7 +152,7 @@ public class OpaApiClientTest {
                                       .setBody(scopesResultJson)
                                       .addHeader("Content-Type", "application/json"));
 
-        List<Scope> scopes = opaApiClient.getScopesForUser("john");
+        List<Scope> scopes = opaApiClient.getScopesListForUser("john");
 
         assertEquals(4, scopes.size());
         assertEquals("role", scopes.get(0).getObjectType());
@@ -189,7 +189,7 @@ public class OpaApiClientTest {
 
         RecordedRequest recordedRequest = mockWebServer.takeRequest();
         assertEquals("POST", recordedRequest.getMethod());
-        assertEquals("/scopes", recordedRequest.getPath());
+        assertEquals("/scopeslist", recordedRequest.getPath());
     }
 
     @Test
