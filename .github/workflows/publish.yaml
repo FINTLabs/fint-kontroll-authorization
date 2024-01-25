@@ -9,7 +9,7 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v2
       - name: Set version
         run: echo "RELEASE_VERSION=$(echo ${GITHUB_REF#refs/*/} | sed "s/^v//")" >> $GITHUB_ENV
       - name: Set up JDK 17
