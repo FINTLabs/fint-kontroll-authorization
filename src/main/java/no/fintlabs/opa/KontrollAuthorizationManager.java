@@ -14,6 +14,7 @@ import org.springframework.security.oauth2.server.resource.authentication.JwtAut
 import org.springframework.security.web.access.intercept.RequestAuthorizationContext;
 import org.springframework.stereotype.Component;
 
+import java.util.List;
 import java.util.function.Supplier;
 
 @Slf4j
@@ -128,12 +129,22 @@ public final class KontrollAuthorizationManager implements AuthorizationManager<
                 .anyMatch(a -> a.getAuthority().equals("ORGID_" + authorizedOrgId));
     }
 
-    private boolean hasAdminRole(JwtAuthenticationToken jwtToken) {
-        log.info("Auth: Found admin role in env: {}", adminRole);
-        jwtToken.getAuthorities().forEach(a -> log.info("Role in jwt: {}", a.getAuthority()));
+    boolean hasAdminRole(JwtAuthenticationToken jwtToken) {
+        log.info("Auth: Listing all roles found on jwt token");
+        jwtToken.getAuthorities().forEach(a -> log.info("Authorities in jwt: {}", a.getAuthority()));
 
-        return jwtToken.getAuthorities().stream()
+        List<String> roles = (List<String>) jwtToken.getTokenAttributes().get("roles");
+        if (roles != null) {
+            log.info("Auth: Listing all roles found on token attributes");
+            roles.forEach(r -> log.info("Roles in token attributes: {}", r));
+        }
+
+        boolean hasAdmin = jwtToken.getAuthorities().stream()
                 .anyMatch(a -> a.getAuthority().equals("ROLE_" + adminRole));
+
+        log.info("Auth: Has admin role: {}", hasAdmin);
+
+        return hasAdmin;
     }
 
     protected void setAdminRole(String adminRole) {
