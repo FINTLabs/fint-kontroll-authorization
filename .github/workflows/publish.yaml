@@ -25,7 +25,8 @@ jobs:
         with:
           arguments: |
             publish
-            -Pversion=${{ env.RELEASE_VERSION }} --refresh-dependencies
+            -Pversion=${{ env.RELEASE_VERSION }}
+            --refresh-dependencies
         env:
           REPOSILITE_USERNAME: ${{ secrets.REPOSILITE_USERNAME }}
           REPOSILITE_PASSWORD: ${{ secrets.REPOSILITE_PASSWORD }}
