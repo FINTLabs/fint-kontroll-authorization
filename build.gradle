@@ -23,7 +23,7 @@ jar {
 
 publishing {
     publications {
-        maven(MavenPublication) {
+        kontrollAuthPublication(MavenPublication) {
             from components.java
         }
     }
