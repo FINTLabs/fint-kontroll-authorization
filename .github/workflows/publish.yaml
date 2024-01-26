@@ -27,7 +27,6 @@ jobs:
             publish
             -Pversion=${{ env.RELEASE_VERSION }}
             --stacktrace
-            --debug
         env:
           REPOSILITE_USERNAME: ${{ secrets.REPOSILITE_USERNAME }}
           REPOSILITE_PASSWORD: ${{ secrets.REPOSILITE_PASSWORD }}
