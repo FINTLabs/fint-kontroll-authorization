@@ -23,6 +23,9 @@ jobs:
       - name: Show Gradle dependencies
         run: ./gradlew dependencies
 
+      - name: List m2
+        run: ls -l $HOME/.m2
+
       - name: List Gradle cache
         run: ls -l $HOME/.gradle/caches
 
