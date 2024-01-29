@@ -16,12 +16,11 @@ jobs:
         uses: gradle/wrapper-validation-action@v1
 
       - name: Gradle Build Action
-        uses: gradle/gradle-build-action@v2.4.2
+        uses: gradle/gradle-build-action@v2
         with:
           arguments: |
             test
             build
-            --refresh-dependencies
 
       - name: Post to a Slack channel
         if: failure()

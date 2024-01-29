@@ -20,15 +20,6 @@ jobs:
       - name: Gradle Wrapper Validation
         uses: gradle/wrapper-validation-action@v1
 
-#      - name: Show Gradle dependencies
-#        run: ./gradlew dependencies
-#
-#      - name: List m2
-#        run: ls -l $HOME/.m2
-#
-#      - name: List Gradle cache
-#        run: ls -l $HOME/.gradle/caches
-
       - name: Gradle Build Action
         uses: gradle/gradle-build-action@v2
         with:
