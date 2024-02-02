@@ -61,6 +61,7 @@ public final class KontrollAuthorizationManager implements AuthorizationManager<
         }
 
         if(!isBeta()) {
+            //TODO: This can be removed when users have assigned the accessmanagement feature to their roles (Fase 2)
             if (getRequestPath(requestContext).contains("/accessmanagement") && !hasAdminRole(jwtToken)) {
                 log.info("Access denied, not correct role for accessmanagement");
                 throw new AccessDeniedException("Access is denied.");
@@ -78,7 +79,7 @@ public final class KontrollAuthorizationManager implements AuthorizationManager<
             }
         }
 
-        boolean authorized = authorizationClient.isAuthorized(userName, getRequestMethod(requestContext));
+        boolean authorized = authorizationClient.isAuthorized(userName, getRequestMethod(requestContext), requestContext.getRequest().getRequestURI());
 
         if (!authorized) {
             log.info("User not authorized, access denied");

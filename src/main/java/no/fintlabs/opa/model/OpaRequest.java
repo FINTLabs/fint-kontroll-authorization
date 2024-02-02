@@ -12,4 +12,5 @@ public class OpaRequest {
 
     private String user;
     private String operation;
+    private String url;
 }

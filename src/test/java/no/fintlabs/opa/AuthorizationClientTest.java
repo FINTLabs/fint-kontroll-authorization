@@ -31,22 +31,26 @@ public class AuthorizationClientTest {
 
     @Test
     public void shouldBeAuthorized() {
-        when(opaApiClient.hasUserAuthorization("ragnild.hansen@viken.no", "GET")).thenReturn(true);
+        String url = "http://localhost:8080/api/orgunits";
 
-        Boolean authorized = authorizationClient.isAuthorized("ragnild.hansen@viken.no", "GET");
+        when(opaApiClient.hasUserAuthorization("ragnild.hansen@viken.no", "GET", url)).thenReturn(true);
+
+        Boolean authorized = authorizationClient.isAuthorized("ragnild.hansen@viken.no", "GET", url);
 
         assertTrue(authorized);
     }
 
     @Test
     public void unknownUserShouldNotBeAuthorized() {
-        when(opaApiClient.hasUserAuthorization("unknown@viken.no", "GET")).thenReturn(false);
+        String url = "http://localhost:8080/api/orgunits";
 
-        Boolean authorized = authorizationClient.isAuthorized("unknown@viken.no", "GET");
+        when(opaApiClient.hasUserAuthorization("unknown@viken.no", "GET", url)).thenReturn(false);
+
+        Boolean authorized = authorizationClient.isAuthorized("unknown@viken.no", "GET", url);
 
         assertFalse(authorized);
 
-        verify(opaApiClient, times(1)).hasUserAuthorization("unknown@viken.no", "GET");
+        verify(opaApiClient, times(1)).hasUserAuthorization("unknown@viken.no", "GET", url);
     }
 
     @Test

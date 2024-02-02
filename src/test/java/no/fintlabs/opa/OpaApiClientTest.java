@@ -1,5 +1,6 @@
 package no.fintlabs.opa;
 
+import jakarta.servlet.http.HttpServletRequest;
 import no.fintlabs.opa.model.Scope;
 import okhttp3.mockwebserver.MockResponse;
 import okhttp3.mockwebserver.MockWebServer;
@@ -7,6 +8,9 @@ import okhttp3.mockwebserver.RecordedRequest;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.ExtendWith;
+import org.mockito.Mock;
+import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.web.client.RestTemplate;
 import org.springframework.web.util.DefaultUriBuilderFactory;
 
@@ -16,10 +20,14 @@ import java.util.List;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
+@ExtendWith(MockitoExtension.class)
 public class OpaApiClientTest {
 
     private MockWebServer mockWebServer;
     private OpaApiClient opaApiClient;
+
+    @Mock
+    private HttpServletRequest httpServletRequest;
 
     @BeforeEach
     public void setUp() throws IOException {
@@ -203,7 +211,7 @@ public class OpaApiClientTest {
         mockWebServer.enqueue(new MockResponse().setBody(isAllowed)
                                       .addHeader("Content-Type", "application/json"));
 
-        boolean isAuthorized = opaApiClient.hasUserAuthorization("john", "GET");
+        boolean isAuthorized = opaApiClient.hasUserAuthorization("john", "GET", "http://localhost:8080/api/orgunits");
 
         assertTrue(isAuthorized);
 

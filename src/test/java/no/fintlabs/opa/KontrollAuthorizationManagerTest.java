@@ -145,7 +145,7 @@ public class KontrollAuthorizationManagerTest {
 
         when(httpServletRequest.getMethod()).thenReturn("GET");
         when(jwtAuthenticationToken.get().getPrincipal()).thenReturn(principal);
-        when(authorizationClient.isAuthorized(anyString(), anyString())).thenReturn(false);
+        when(authorizationClient.isAuthorized(anyString(), anyString(), anyString())).thenReturn(false);
     }
 
     private void expectAdminRoleAndOrg() {
@@ -171,7 +171,7 @@ public class KontrollAuthorizationManagerTest {
     private void setupAuthorized() {
         when(httpServletRequest.getMethod()).thenReturn("GET");
         when(jwtAuthenticationToken.get().getPrincipal()).thenReturn(principal);
-        when(authorizationClient.isAuthorized(anyString(), anyString())).thenReturn(true);
+        when(authorizationClient.isAuthorized(anyString(), anyString(), anyString())).thenReturn(true);
     }
 
     private void setupAuthorizedAdmin() {

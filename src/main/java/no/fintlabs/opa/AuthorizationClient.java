@@ -18,9 +18,9 @@ public class AuthorizationClient {
         this.authenticationUtil = authenticationUtil;
     }
 
-    public Boolean isAuthorized(String user, String operation) {
-        log.info("Checking if user {} is authorized for operation {}", user, operation);
-        return opaApiClient.hasUserAuthorization(user, operation);
+    public Boolean isAuthorized(String user, String operation, String url) {
+        log.info("Checking if user {} is authorized for operation {} on url {}", user, operation, url);
+        return opaApiClient.hasUserAuthorization(user, operation, url);
     }
 
     public List<Scope> getUserScopes() {

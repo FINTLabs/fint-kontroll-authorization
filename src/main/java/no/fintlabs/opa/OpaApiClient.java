@@ -1,5 +1,6 @@
 package no.fintlabs.opa;
 
+import jakarta.servlet.http.HttpServletRequest;
 import lombok.extern.slf4j.Slf4j;
 import no.fintlabs.opa.model.AllowResponse;
 import no.fintlabs.opa.model.OpaRequest;
@@ -14,6 +15,8 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Component;
 import org.springframework.web.client.HttpClientErrorException;
 import org.springframework.web.client.RestTemplate;
+import org.springframework.web.context.request.RequestContextHolder;
+import org.springframework.web.context.request.ServletRequestAttributes;
 
 import java.util.ArrayList;
 import java.util.Collections;
@@ -42,7 +45,7 @@ public class OpaApiClient {
 
         HttpHeaders headers = new HttpHeaders();
         headers.setContentType(MediaType.APPLICATION_JSON);
-        HttpEntity<Map<String, Object>> request = new HttpEntity<>(createOpaRequestData(user, "GET"), headers);
+        HttpEntity<Map<String, Object>> request = new HttpEntity<>(createOpaRequestData(user, "GET", getRequestURI()), headers);
 
         try {
             ResponseEntity<ScopesResponse> scopes = restTemplate.exchange("/scopes", HttpMethod.POST, request, ScopesResponse.class);
@@ -64,7 +67,7 @@ public class OpaApiClient {
 
         HttpHeaders headers = new HttpHeaders();
         headers.setContentType(MediaType.APPLICATION_JSON);
-        HttpEntity<Map<String, Object>> request = new HttpEntity<>(createOpaRequestData(user, "GET"), headers);
+        HttpEntity<Map<String, Object>> request = new HttpEntity<>(createOpaRequestData(user, "GET", getRequestURI()), headers);
 
         try {
             ResponseEntity<ScopesListResponse> response = restTemplate.exchange("/scopeslist", HttpMethod.POST, request, ScopesListResponse.class);
@@ -94,8 +97,8 @@ public class OpaApiClient {
         return Collections.emptyList();
     }
 
-    public boolean hasUserAuthorization(String user, String operation) {
-        HttpEntity<Map<String, Object>> request = new HttpEntity<>(createOpaRequestData(user, operation));
+    public boolean hasUserAuthorization(String user, String operation, String url) {
+        HttpEntity<Map<String, Object>> request = new HttpEntity<>(createOpaRequestData(user, operation, url));
 
         try {
             log.info("Fetching authorization for user {} and operation {}", user, operation);
@@ -114,7 +117,16 @@ public class OpaApiClient {
         return false;
     }
 
-    private Map<String, Object> createOpaRequestData(String user, String operation) {
-        return Map.of("input", new OpaRequest(user, operation));
+    private Map<String, Object> createOpaRequestData(String user, String operation, String url) {
+        return Map.of("input", new OpaRequest(user, operation, url));
+    }
+
+    private String getRequestURI() {
+        if (RequestContextHolder.getRequestAttributes() == null) {
+            return "";
+        }
+
+        HttpServletRequest request = ((ServletRequestAttributes) RequestContextHolder.getRequestAttributes()).getRequest();
+        return request.getRequestURI();
     }
 }
