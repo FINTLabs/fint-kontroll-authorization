@@ -101,7 +101,7 @@ public class OpaApiClient {
         HttpEntity<Map<String, Object>> request = new HttpEntity<>(createOpaRequestData(user, operation, url));
 
         try {
-            log.info("Fetching authorization for user {} and operation {}", user, operation);
+            log.info("Fetching authorization for user {}, operation {} and url {}", user, operation, url);
             ResponseEntity<AllowResponse> allow = restTemplate.exchange("/allow", HttpMethod.POST, request, AllowResponse.class);
 
             boolean authorized = allow.getBody() != null && allow.getBody().isAllow();
