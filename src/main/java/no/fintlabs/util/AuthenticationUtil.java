@@ -64,6 +64,7 @@ public class AuthenticationUtil {
         orgId = orgId.replace(".", "-");
 
         requestURI = requestURI.replace("/" + orgId, "");
+        requestURI = requestURI.replace("/beta/fintlabs-no", "");
 
         log.info("Stripped request URI: {}", requestURI);
         return requestURI;

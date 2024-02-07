@@ -44,7 +44,8 @@ public final class KontrollAuthorizationManager implements AuthorizationManager<
     @Override
     public AuthorizationDecision check(Supplier<Authentication> auth, RequestAuthorizationContext requestContext) {
 
-        if(getRequestPath(requestContext).contains("/swagger-ui") || getRequestPath(requestContext).contains("/api-docs") || getRequestPath(requestContext).contains("/opabundle")) {
+        if (getRequestPath(requestContext).contains("/swagger-ui") || getRequestPath(requestContext).contains("/api-docs") ||
+            getRequestPath(requestContext).contains("/opabundle")) {
             log.debug("Swagger or api-docs, skipping authorization");
             return new AuthorizationDecision(true);
         }
@@ -59,12 +60,12 @@ public final class KontrollAuthorizationManager implements AuthorizationManager<
         boolean authenticated = authentication.isAuthenticated();
         log.info("User {} got authentication result {}", userName, authenticated);
 
-        if(!authenticated) {
+        if (!authenticated) {
             log.info("User not authenticated, access denied");
             throw new AccessDeniedException("User not authenticated, access is denied");
         }
 
-        if(!isBeta()) {
+        if (!isBeta()) {
             //TODO: This can be removed when users have assigned the accessmanagement feature to their roles (Fase 2)
             if (getRequestPath(requestContext).contains("/accessmanagement") && !hasAdminRole(jwtToken)) {
                 log.info("Access denied, not correct role for accessmanagement");
@@ -83,8 +84,7 @@ public final class KontrollAuthorizationManager implements AuthorizationManager<
             }
         }
 
-        boolean authorized = authorizationClient.isAuthorized(userName, getRequestMethod(requestContext),
-                                                              isBeta() ? authenticationUtil.getUrl().replace("/beta/fintlabs-no", "") : authenticationUtil.getUrl());
+        boolean authorized = authorizationClient.isAuthorized(userName, getRequestMethod(requestContext), authenticationUtil.getUrl());
 
         if (!authorized) {
             log.info("User not authorized, access denied");
