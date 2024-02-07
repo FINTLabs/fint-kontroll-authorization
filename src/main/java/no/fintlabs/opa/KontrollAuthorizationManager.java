@@ -2,6 +2,7 @@ package no.fintlabs.opa;
 
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import no.fintlabs.util.AuthenticationUtil;
 import no.vigoiks.resourceserver.security.FintJwtEndUserPrincipal;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
@@ -36,6 +37,9 @@ public final class KontrollAuthorizationManager implements AuthorizationManager<
 
     @Value("${fint.relations.default-base-url:localhost}")
     private String baseUrl;
+
+    @Autowired
+    private AuthenticationUtil authenticationUtil;
 
     @Override
     public AuthorizationDecision check(Supplier<Authentication> auth, RequestAuthorizationContext requestContext) {
@@ -79,7 +83,7 @@ public final class KontrollAuthorizationManager implements AuthorizationManager<
             }
         }
 
-        boolean authorized = authorizationClient.isAuthorized(userName, getRequestMethod(requestContext), requestContext.getRequest().getRequestURI());
+        boolean authorized = authorizationClient.isAuthorized(userName, getRequestMethod(requestContext), authenticationUtil.getUrl());
 
         if (!authorized) {
             log.info("User not authorized, access denied");

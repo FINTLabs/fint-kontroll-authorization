@@ -60,6 +60,6 @@ public class AuthorizationClient {
     private List<Scope> lookupScopesList() {
         String userName = authenticationUtil.getUserName();
         log.info("Looking up scopes for user {}", userName);
-        return opaApiClient.getScopesListForUser(userName);
+        return opaApiClient.getScopesListForUser(userName, authenticationUtil.getUrl());
     }
 }

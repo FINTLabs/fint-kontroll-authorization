@@ -1,6 +1,7 @@
 package no.fintlabs.opa;
 
 import jakarta.servlet.http.HttpServletRequest;
+import no.fintlabs.util.AuthenticationUtil;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -23,6 +24,8 @@ import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.times;
+import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 @ExtendWith(MockitoExtension.class)
@@ -48,6 +51,9 @@ public class KontrollAuthorizationManagerTest {
     @Mock
     private HttpServletRequest httpServletRequest;
 
+    @Mock
+    private AuthenticationUtil authenticationUtil;
+
     @BeforeEach
     public void setUp() {
         httpServletRequest = mock(HttpServletRequest.class);
@@ -67,10 +73,27 @@ public class KontrollAuthorizationManagerTest {
 
         when(httpServletRequest.getRequestURI()).thenReturn("/api/orgunits");
         when(auth.get().isAuthenticated()).thenReturn(true);
+        when(authenticationUtil.getUrl()).thenReturn("/api/orgunits");
 
         assertDoesNotThrow(() -> {
             kontrollAuthorizationManager.check(auth, requestAuthorizationContext);
         });
+    }
+
+    @Test
+    public void testDecide_Authorized_org_prefix() {
+        setupAuth();
+        setupAuthorizedUser();
+
+        when(httpServletRequest.getRequestURI()).thenReturn("/vigo-no/api/orgunits");
+        when(auth.get().isAuthenticated()).thenReturn(true);
+        when(authenticationUtil.getUrl()).thenReturn("/api/orgunits");
+
+        assertDoesNotThrow(() -> {
+            kontrollAuthorizationManager.check(auth, requestAuthorizationContext);
+        });
+
+        verify(authorizationClient, times(1)).isAuthorized("", "GET", "/api/orgunits");
     }
 
     @Test
@@ -118,6 +141,7 @@ public class KontrollAuthorizationManagerTest {
         when(auth.get().isAuthenticated()).thenReturn(true);
 
         when(httpServletRequest.getRequestURI()).thenReturn("/testunauthorized");
+        when(authenticationUtil.getUrl()).thenReturn("/api/orgunits");
 
         assertThrows(AccessDeniedException.class, () -> kontrollAuthorizationManager.check(auth, requestAuthorizationContext));
     }

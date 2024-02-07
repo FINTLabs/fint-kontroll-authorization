@@ -62,12 +62,12 @@ public class OpaApiClient {
         return Collections.emptyList();
     }
 
-    public List<Scope> getScopesListForUser(String user) {
+    public List<Scope> getScopesListForUser(String user, String url) {
         log.info("Getting scopes for user {}", user);
 
         HttpHeaders headers = new HttpHeaders();
         headers.setContentType(MediaType.APPLICATION_JSON);
-        HttpEntity<Map<String, Object>> request = new HttpEntity<>(createOpaRequestData(user, "GET", getRequestURI()), headers);
+        HttpEntity<Map<String, Object>> request = new HttpEntity<>(createOpaRequestData(user, "GET", url), headers);
 
         try {
             ResponseEntity<ScopesListResponse> response = restTemplate.exchange("/scopeslist", HttpMethod.POST, request, ScopesListResponse.class);

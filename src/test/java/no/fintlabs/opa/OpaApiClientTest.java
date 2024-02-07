@@ -160,7 +160,7 @@ public class OpaApiClientTest {
                                       .setBody(scopesResultJson)
                                       .addHeader("Content-Type", "application/json"));
 
-        List<Scope> scopes = opaApiClient.getScopesListForUser("john");
+        List<Scope> scopes = opaApiClient.getScopesListForUser("john", "/api/");
 
         assertEquals(4, scopes.size());
         assertEquals("role", scopes.get(0).getObjectType());

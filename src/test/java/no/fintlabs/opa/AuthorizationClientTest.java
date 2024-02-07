@@ -94,6 +94,7 @@ public class AuthorizationClientTest {
 
         when(authenticationUtil.isAuthenticated()).thenReturn(true);
         when(authenticationUtil.getUserName()).thenReturn(userName);
+        when(authenticationUtil.getUrl()).thenReturn("/api/test");
 
         Scope scope1 = Scope.builder()
                 .objectType("user")
@@ -107,7 +108,7 @@ public class AuthorizationClientTest {
 
         List<Scope> scopes = List.of(scope1, scope2);
 
-        when(opaApiClient.getScopesListForUser(userName)).thenReturn(scopes);
+        when(opaApiClient.getScopesListForUser(userName, "/api/test")).thenReturn(scopes);
 
         List<Scope> foundScopes = authorizationClient.getUserScopesList();
 
@@ -118,7 +119,7 @@ public class AuthorizationClientTest {
         assertEquals("2", foundScopes.get(0).getOrgUnits().get(1));
         assertEquals("3", foundScopes.get(0).getOrgUnits().get(2));
 
-        verify(opaApiClient, times(1)).getScopesListForUser(userName);
+        verify(opaApiClient, times(1)).getScopesListForUser(userName, "/api/test");
         verify(authenticationUtil, times(1)).getUserName();
         verify(authenticationUtil, times(1)).isAuthenticated();
     }
