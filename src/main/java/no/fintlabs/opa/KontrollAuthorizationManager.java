@@ -83,7 +83,8 @@ public final class KontrollAuthorizationManager implements AuthorizationManager<
             }
         }
 
-        boolean authorized = authorizationClient.isAuthorized(userName, getRequestMethod(requestContext), authenticationUtil.getUrl());
+        boolean authorized = authorizationClient.isAuthorized(userName, getRequestMethod(requestContext),
+                                                              isBeta() ? authenticationUtil.getUrl().replace("/beta/fintlabs-no", "") : authenticationUtil.getUrl());
 
         if (!authorized) {
             log.info("User not authorized, access denied");
