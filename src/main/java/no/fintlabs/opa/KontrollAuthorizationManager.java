@@ -65,14 +65,7 @@ public final class KontrollAuthorizationManager implements AuthorizationManager<
             throw new AccessDeniedException("User not authenticated, access is denied");
         }
 
-        if (!isBeta()) {
-            //TODO: This can be removed when users have assigned the accessmanagement feature to their roles (Fase 2)
-            if (getRequestPath(requestContext).contains("/accessmanagement") && !hasAdminRole(jwtToken)) {
-                log.info("Access denied, not correct role for accessmanagement");
-                throw new AccessDeniedException("Access is denied.");
-
-            }
-
+        if (!isLocalhost()) {
             if (hasAdminRole(jwtToken) && hasCorrectOrgId(jwtToken)) {
                 log.info("User has admin role, access granted");
                 return new AuthorizationDecision(true);
@@ -94,11 +87,11 @@ public final class KontrollAuthorizationManager implements AuthorizationManager<
         return new AuthorizationDecision(true);
     }
 
-    private boolean isBeta() {
+    private boolean isLocalhost() {
         log.info("Environment is: {}", baseUrl);
 
-        if (baseUrl.equals("localhost") || baseUrl.contains("/beta.")) {
-            log.info("Auth: Is beta");
+        if (baseUrl.equals("localhost")) {
+            log.info("Auth: Is localhost");
             return true;
         }
 

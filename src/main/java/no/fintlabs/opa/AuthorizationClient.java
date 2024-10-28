@@ -37,6 +37,10 @@ public class AuthorizationClient {
         }
     }
 
+    public boolean isAdmin() {
+        return authenticationUtil.isAdmin();
+    }
+
     public List<String> getRoles() {
         log.info("Getting list of roles");
         Boolean authenticated = authenticationUtil.isAuthenticated();
