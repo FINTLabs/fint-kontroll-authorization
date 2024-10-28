@@ -4,9 +4,9 @@ import jakarta.servlet.http.HttpServletRequest;
 import lombok.extern.slf4j.Slf4j;
 import no.fintlabs.opa.model.AllowResponse;
 import no.fintlabs.opa.model.OpaRequest;
+import no.fintlabs.opa.model.RolesResponse;
 import no.fintlabs.opa.model.Scope;
 import no.fintlabs.opa.model.ScopesListResponse;
-import no.fintlabs.opa.model.ScopesResponse;
 import org.springframework.http.HttpEntity;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpMethod;
@@ -24,7 +24,6 @@ import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
-import java.util.Optional;
 import java.util.Set;
 
 
@@ -36,30 +35,6 @@ public class OpaApiClient {
 
     public OpaApiClient(RestTemplate restTemplate) {
         this.restTemplate = restTemplate;
-    }
-
-    // Will be removed as soon as the new OPA API is in production
-    @Deprecated(forRemoval = true)
-    public List<Scope> getScopesForUser(String user) {
-        log.info("Getting scopes for user {}", user);
-
-        HttpHeaders headers = new HttpHeaders();
-        headers.setContentType(MediaType.APPLICATION_JSON);
-        HttpEntity<Map<String, Object>> request = new HttpEntity<>(createOpaRequestData(user, "GET", getRequestURI()), headers);
-
-        try {
-            ResponseEntity<ScopesResponse> scopes = restTemplate.exchange("/scopes", HttpMethod.POST, request, ScopesResponse.class);
-            log.info("Got scopes from OPA: {}", scopes.getBody());
-            return Optional.ofNullable(scopes.getBody())
-                    .map(ScopesResponse::getScopes)
-                    .orElse(Collections.emptyList());
-        } catch (HttpClientErrorException e) {
-            log.warn("Could not fetch scopes for user {}. Response status: {}", user, e.getStatusCode());
-        } catch (Exception e) {
-            log.error("An error occurred while fetching scopes for user {}", user, e);
-        }
-
-        return Collections.emptyList();
     }
 
     public List<Scope> getScopesListForUser(String user, String url) {
@@ -129,4 +104,33 @@ public class OpaApiClient {
         HttpServletRequest request = ((ServletRequestAttributes) RequestContextHolder.getRequestAttributes()).getRequest();
         return request.getRequestURI();
     }
+
+    public List<String> getRolesForUser(String userName) {
+        log.info("Getting roles for user {}", userName);
+
+        HttpHeaders headers = new HttpHeaders();
+        headers.setContentType(MediaType.APPLICATION_JSON);
+        HttpEntity<Map<String, Object>> request = new HttpEntity<>(createOpaRequestData(userName, "GET", getRequestURI()), headers);
+
+        try {
+            ResponseEntity<RolesResponse> response = restTemplate.exchange("/roles", HttpMethod.POST, request, RolesResponse.class);
+            log.info("Got user assignments from OPA: {}", response.getBody());
+
+            if (response.getBody() != null) {
+                return response.getBody().getRoles().stream()
+                        .flatMap(List::stream)
+                        .toList();
+            }
+        } catch (HttpClientErrorException e) {
+            log.warn("Could not fetch roles for user {}. Response status: {}", userName, e.getStatusCode());
+        } catch (Exception e) {
+            log.error("An error occurred while fetching roles for user {}", userName, e);
+        }
+
+        return Collections.emptyList();
+    }
+
+
+
+
 }

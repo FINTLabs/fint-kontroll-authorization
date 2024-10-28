@@ -23,20 +23,6 @@ public class AuthorizationClient {
         return opaApiClient.hasUserAuthorization(user, operation, url);
     }
 
-    public List<Scope> getUserScopes() {
-        log.info("Getting user scopes");
-        Boolean authenticated = authenticationUtil.isAuthenticated();
-        log.info("User is authenticated: {}", authenticated);
-
-        if (authenticated) {
-            log.info("User is authenticated, getting user scopes");
-            return lookupScopes();
-        } else {
-            log.info("User is not authenticated");
-            return List.of();
-        }
-    }
-
     public List<Scope> getUserScopesList() {
         log.info("Getting list of user scopes");
         Boolean authenticated = authenticationUtil.isAuthenticated();
@@ -51,10 +37,25 @@ public class AuthorizationClient {
         }
     }
 
-    private List<Scope> lookupScopes() {
-        String userName = authenticationUtil.getUserName();
-        log.info("Looking up scopes for user {}", userName);
-        return opaApiClient.getScopesForUser(userName);
+    public List<String> getRoles() {
+        log.info("Getting list of roles");
+        Boolean authenticated = authenticationUtil.isAuthenticated();
+        log.info("User is authenticated: {}", authenticated);
+
+        if (authenticated) {
+            String userName = authenticationUtil.getUserName();
+
+            if(userName == null || userName.isEmpty()) {
+                log.info("Username not found in authorization token {}", userName);
+                return List.of();
+            }
+
+            log.info("Looking up roles for user {}", userName);
+            return opaApiClient.getRolesForUser(userName);
+        } else {
+            log.info("User is not authenticated");
+            return List.of();
+        }
     }
 
     private List<Scope> lookupScopesList() {

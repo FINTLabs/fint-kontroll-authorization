@@ -17,6 +17,7 @@ import org.springframework.web.util.DefaultUriBuilderFactory;
 import java.io.IOException;
 import java.util.List;
 
+import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
@@ -41,58 +42,6 @@ public class OpaApiClientTest {
     @AfterEach
     public void tearDown() throws IOException {
         mockWebServer.shutdown();
-    }
-
-    @Test
-    public void testGetScopesForUser() throws InterruptedException {
-        String scopesResultJson = """
-                 {
-                    "result": [
-                        {
-                            "id": "1",
-                            "objecttype": "user",
-                            "orgunits": [
-                                "198",
-                                "2",
-                                "3"
-                            ]
-                        },
-                        {
-                            "id": "2",
-                            "objecttype": "role",
-                            "orgunits": [
-                                "198",
-                                "2",
-                                "3"
-                            ]
-                        },
-                        {
-                            "id": "3",
-                            "objecttype": "resource",
-                            "orgunits": [
-                                "198",
-                                "2",
-                                "3"
-                            ]
-                        }
-                    ]
-                }""";
-        mockWebServer.enqueue(new MockResponse()
-                                      .setBody(scopesResultJson)
-                                      .addHeader("Content-Type", "application/json"));
-
-        List<Scope> scopes = opaApiClient.getScopesForUser("john");
-
-        assertEquals(3, scopes.size());
-        assertEquals("user", scopes.get(0).getObjectType());
-        assertEquals(3, scopes.get(0).getOrgUnits().size());
-        assertEquals("198", scopes.get(0).getOrgUnits().get(0));
-        assertEquals("2", scopes.get(0).getOrgUnits().get(1));
-        assertEquals("3", scopes.get(0).getOrgUnits().get(2));
-
-        RecordedRequest recordedRequest = mockWebServer.takeRequest();
-        assertEquals("POST", recordedRequest.getMethod());
-        assertEquals("/scopes", recordedRequest.getPath());
     }
 
     @Test
@@ -198,6 +147,38 @@ public class OpaApiClientTest {
         RecordedRequest recordedRequest = mockWebServer.takeRequest();
         assertEquals("POST", recordedRequest.getMethod());
         assertEquals("/scopeslist", recordedRequest.getPath());
+    }
+
+    @Test
+    public void testGetAllUserRoles() throws InterruptedException {
+        String rolesResultJson = """
+                {
+                	"result": [
+                		[
+                			"l"
+                		],
+                		[
+                			"sa"
+                		],
+                		[
+                			"td"
+                		]
+                	]
+                }
+                """;
+        mockWebServer.enqueue(new MockResponse()
+                                      .setBody(rolesResultJson)
+                                      .addHeader("Content-Type", "application/json"));
+
+        List<String> roles = opaApiClient.getRolesForUser("morten.solberg@novari.no");
+
+        assertEquals(3, roles.size());
+
+        assertThat(roles).contains("l", "sa", "td");
+
+        RecordedRequest recordedRequest = mockWebServer.takeRequest();
+        assertEquals("POST", recordedRequest.getMethod());
+        assertEquals("/roles", recordedRequest.getPath());
     }
 
     @Test

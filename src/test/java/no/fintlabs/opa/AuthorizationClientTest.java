@@ -54,41 +54,6 @@ public class AuthorizationClientTest {
     }
 
     @Test
-    public void shouldGetUserScopes() {
-        String userName = "ragnild.hansen@viken.no";
-
-        when(authenticationUtil.isAuthenticated()).thenReturn(true);
-        when(authenticationUtil.getUserName()).thenReturn(userName);
-
-        Scope scope1 = Scope.builder()
-                .objectType("user")
-                .orgUnits(List.of("198", "2", "3"))
-                .build();
-
-        Scope scope2 = Scope.builder()
-                .objectType("role")
-                .orgUnits(List.of("198", "2", "3"))
-                .build();
-
-        List<Scope> scopes = List.of(scope1, scope2);
-
-        when(opaApiClient.getScopesForUser(userName)).thenReturn(scopes);
-
-        List<Scope> foundScopes = authorizationClient.getUserScopes();
-
-        assertEquals(2, foundScopes.size());
-        assertEquals("user", foundScopes.get(0).getObjectType());
-        assertEquals(3, foundScopes.get(0).getOrgUnits().size());
-        assertEquals("198", foundScopes.get(0).getOrgUnits().get(0));
-        assertEquals("2", foundScopes.get(0).getOrgUnits().get(1));
-        assertEquals("3", foundScopes.get(0).getOrgUnits().get(2));
-
-        verify(opaApiClient, times(1)).getScopesForUser(userName);
-        verify(authenticationUtil, times(1)).getUserName();
-        verify(authenticationUtil, times(1)).isAuthenticated();
-    }
-
-    @Test
     public void shouldGetUserScopesFromList() {
         String userName = "ragnild.hansen@viken.no";
 
@@ -125,13 +90,35 @@ public class AuthorizationClientTest {
     }
 
     @Test
+    public void shouldGetUserRoles() {
+        String userName = "ragnild.hansen@viken.no";
+
+        when(authenticationUtil.isAuthenticated()).thenReturn(true);
+        when(authenticationUtil.getUserName()).thenReturn(userName);
+        when(authenticationUtil.getUrl()).thenReturn("/api/test");
+
+        when(opaApiClient.getRolesForUser(userName)).thenReturn(List.of("sa", "ra"));
+
+        List<String> roles = authorizationClient.getRoles();
+
+        assertEquals(2, roles.size());
+        assertEquals("sa", roles.get(0));
+        assertEquals("ra", roles.get(1));
+
+        verify(opaApiClient, times(1)).getRolesForUser(userName);
+        verify(authenticationUtil, times(1)).getUserName();
+        verify(authenticationUtil, times(1)).isAuthenticated();
+    }
+
+
+    @Test
     public void shouldNotGetUserScopesIfNotAuthenticated() {
         when(authenticationUtil.isAuthenticated()).thenReturn(false);
 
-        List<Scope> scopes = authorizationClient.getUserScopes();
+        List<Scope> scopes = authorizationClient.getUserScopesList();
 
         assertEquals(0, scopes.size());
 
-        verify(opaApiClient, times(0)).getScopesForUser(any());
+        verify(opaApiClient, times(0)).getScopesListForUser(any(), any());
     }
 }
