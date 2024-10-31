@@ -170,7 +170,7 @@ public class OpaApiClientTest {
                                       .setBody(rolesResultJson)
                                       .addHeader("Content-Type", "application/json"));
 
-        List<String> roles = opaApiClient.getRolesForUser("morten.solberg@novari.no");
+        List<String> roles = opaApiClient.getRolesForUser("morten.solberg@novari.no", "/api/test");
 
         assertEquals(3, roles.size());
 

@@ -55,7 +55,7 @@ public class AuthorizationClient {
             }
 
             log.info("Looking up roles for user {}", userName);
-            return opaApiClient.getRolesForUser(userName);
+            return opaApiClient.getRolesForUser(userName, authenticationUtil.getUrl());
         } else {
             log.info("User is not authenticated");
             return List.of();

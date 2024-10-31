@@ -97,7 +97,7 @@ public class AuthorizationClientTest {
         when(authenticationUtil.getUserName()).thenReturn(userName);
         when(authenticationUtil.getUrl()).thenReturn("/api/test");
 
-        when(opaApiClient.getRolesForUser(userName)).thenReturn(List.of("sa", "ra"));
+        when(opaApiClient.getRolesForUser(userName, "/api/test")).thenReturn(List.of("sa", "ra"));
 
         List<String> roles = authorizationClient.getRoles();
 
@@ -105,7 +105,7 @@ public class AuthorizationClientTest {
         assertEquals("sa", roles.get(0));
         assertEquals("ra", roles.get(1));
 
-        verify(opaApiClient, times(1)).getRolesForUser(userName);
+        verify(opaApiClient, times(1)).getRolesForUser(userName, "/api/test");
         verify(authenticationUtil, times(1)).getUserName();
         verify(authenticationUtil, times(1)).isAuthenticated();
     }

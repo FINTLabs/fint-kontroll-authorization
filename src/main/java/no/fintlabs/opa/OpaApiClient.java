@@ -1,6 +1,5 @@
 package no.fintlabs.opa;
 
-import jakarta.servlet.http.HttpServletRequest;
 import lombok.extern.slf4j.Slf4j;
 import no.fintlabs.opa.model.AllowResponse;
 import no.fintlabs.opa.model.OpaRequest;
@@ -15,8 +14,6 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Component;
 import org.springframework.web.client.HttpClientErrorException;
 import org.springframework.web.client.RestTemplate;
-import org.springframework.web.context.request.RequestContextHolder;
-import org.springframework.web.context.request.ServletRequestAttributes;
 
 import java.util.ArrayList;
 import java.util.Collections;
@@ -96,21 +93,12 @@ public class OpaApiClient {
         return Map.of("input", new OpaRequest(user, operation, url));
     }
 
-    private String getRequestURI() {
-        if (RequestContextHolder.getRequestAttributes() == null) {
-            return "";
-        }
-
-        HttpServletRequest request = ((ServletRequestAttributes) RequestContextHolder.getRequestAttributes()).getRequest();
-        return request.getRequestURI();
-    }
-
-    public List<String> getRolesForUser(String userName) {
+    public List<String> getRolesForUser(String userName, String url) {
         log.info("Getting roles for user {}", userName);
 
         HttpHeaders headers = new HttpHeaders();
         headers.setContentType(MediaType.APPLICATION_JSON);
-        HttpEntity<Map<String, Object>> request = new HttpEntity<>(createOpaRequestData(userName, "GET", getRequestURI()), headers);
+        HttpEntity<Map<String, Object>> request = new HttpEntity<>(createOpaRequestData(userName, "GET", url), headers);
 
         try {
             ResponseEntity<RolesResponse> response = restTemplate.exchange("/roles", HttpMethod.POST, request, RolesResponse.class);
