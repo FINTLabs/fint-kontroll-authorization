@@ -4,6 +4,12 @@ on:
   release:
     types: [ published ]
 
+env:
+  REGISTRY: ghcr.io
+  IMAGE_NAME: ${{ github.repository }}
+  JAVA-VERSION: "21"
+  JAVA-DISTRIBUTION: "zulu"
+
 jobs:
   publish:
     runs-on: ubuntu-latest
@@ -12,11 +18,11 @@ jobs:
       - uses: actions/checkout@v4
       - name: Set version
         run: echo "RELEASE_VERSION=$(echo ${GITHUB_REF#refs/*/} | sed "s/^v//")" >> $GITHUB_ENV
-      - name: Set up JDK 17
+      - name: Set up JDK 21
         uses: actions/setup-java@v4
         with:
-          java-version: '17'
-          distribution: 'adopt'
+          distribution: ${{ env.JAVA-DISTRIBUTION }}
+          java-version: ${{ env.JAVA-VERSION }}
       - name: Gradle Wrapper Validation
         uses: gradle/wrapper-validation-action@v1
 
