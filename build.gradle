@@ -10,8 +10,9 @@ plugins {
 
 group = 'no.fintlabs'
 
-sourceCompatibility = '17'
-targetCompatibility = '17'
+java {
+    sourceCompatibility = '21'
+}
 
 bootJar {
     enabled = false
