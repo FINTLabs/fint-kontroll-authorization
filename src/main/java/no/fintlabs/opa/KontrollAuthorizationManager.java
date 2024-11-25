@@ -52,7 +52,7 @@ public final class KontrollAuthorizationManager implements AuthorizationManager<
 
         Authentication authentication = auth.get();
         if (!(authentication instanceof final JwtAuthenticationToken jwtToken)) {
-            log.warn("Illegal jwt token: " + authentication.getClass().getName());
+            log.warn("Illegal jwt token: " + authentication.getClass().getName() + ". Request URI: " + requestContext.getRequest().getRequestURI() + ". Request servlet path: " + requestContext.getRequest().getServletPath());
             throw new AccessDeniedException("Access denied, illegal JwtAuthenticationToken: " + authentication.getClass().getName());
         }
 

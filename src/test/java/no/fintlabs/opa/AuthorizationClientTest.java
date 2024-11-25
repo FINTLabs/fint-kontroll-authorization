@@ -1,5 +1,7 @@
 package no.fintlabs.opa;
 
+import no.fintlabs.opa.model.AuthRole;
+import no.fintlabs.opa.model.AuthorizedRole;
 import no.fintlabs.opa.model.Scope;
 import no.fintlabs.util.AuthenticationUtil;
 import org.junit.jupiter.api.BeforeEach;
@@ -7,6 +9,7 @@ import org.junit.jupiter.api.Test;
 
 import java.util.List;
 
+import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertTrue;
@@ -90,7 +93,7 @@ public class AuthorizationClientTest {
     }
 
     @Test
-    public void shouldGetUserRoles() {
+    public void shouldGetRoles() {
         String userName = "ragnild.hansen@viken.no";
 
         when(authenticationUtil.isAuthenticated()).thenReturn(true);
@@ -120,5 +123,118 @@ public class AuthorizationClientTest {
         assertEquals(0, scopes.size());
 
         verify(opaApiClient, times(0)).getScopesListForUser(any(), any());
+    }
+
+    @Test
+    public void shouldGetUserRoles() {
+        String userName = "ragnild.hansen@viken.no";
+
+        when(authenticationUtil.isAdmin()).thenReturn(false);
+        when(authenticationUtil.isAuthenticated()).thenReturn(true);
+        when(authenticationUtil.getUserName()).thenReturn(userName);
+        when(authenticationUtil.getUrl()).thenReturn("/api/test");
+        when(opaApiClient.getRolesForUser(userName, "/api/test")).thenReturn(List.of("td"));
+
+        List<AuthRole> userRoles = authorizationClient.getUserRoles();
+
+        assertThat(userRoles).isNotEmpty();
+        assertThat(userRoles).hasSize(1);
+        assertThat(userRoles.getFirst().getName()).isEqualTo(AuthorizedRole.TILDELER.getName());
+        assertThat(userRoles.getFirst().getId()).isEqualTo(AuthorizedRole.TILDELER.getShortName());
+    }
+
+    @Test
+    public void shouldGetUserRolesAsAdmin() {
+        String userName = "ragnild.hansen@viken.no";
+
+        when(authenticationUtil.isAdmin()).thenReturn(true);
+        when(authenticationUtil.isAuthenticated()).thenReturn(true);
+        when(authenticationUtil.getUserName()).thenReturn(userName);
+        when(authenticationUtil.getUrl()).thenReturn("/api/test");
+        when(opaApiClient.getRolesForUser(userName, "/api/test")).thenReturn(List.of("td"));
+
+        List<AuthRole> userRoles = authorizationClient.getUserRoles();
+
+        assertThat(userRoles).isNotEmpty();
+        assertThat(userRoles).hasSize(2);
+        assertThat(userRoles.getFirst().getName()).isEqualTo(AuthorizedRole.PORTAL_ADMIN.getName());
+        assertThat(userRoles.getFirst().getId()).isEqualTo(AuthorizedRole.PORTAL_ADMIN.getShortName());
+        assertThat(userRoles.get(1).getName()).isEqualTo(AuthorizedRole.TILDELER.getName());
+        assertThat(userRoles.get(1).getId()).isEqualTo(AuthorizedRole.TILDELER.getShortName());
+    }
+
+    @Test
+    public void shouldBeAllowedToCreateAccessAssignment() {
+        String userName = "ragnild.hansen@viken.no";
+
+        when(authenticationUtil.isAuthenticated()).thenReturn(true);
+        when(authenticationUtil.getUserName()).thenReturn(userName);
+        when(authenticationUtil.getUrl()).thenReturn("/api/test");
+        when(opaApiClient.getRolesForUser(userName, "/api/test")).thenReturn(List.of("td"));
+
+        when(authenticationUtil.isAdmin()).thenReturn(true);
+
+        assertTrue(authorizationClient.canManageAccessAssignment(AuthorizedRole.SYSTEM_ADMIN.getShortName()));
+
+        when(opaApiClient.getRolesForUser(userName, "/api/test")).thenReturn(List.of("sa"));
+        when(authenticationUtil.isAdmin()).thenReturn(false);
+
+        assertTrue(authorizationClient.canManageAccessAssignment(AuthorizedRole.SYSTEM_ADMIN.getShortName()));
+
+        when(opaApiClient.getRolesForUser(userName, "/api/test")).thenReturn(List.of("ra"));
+
+        assertTrue(authorizationClient.canManageAccessAssignment(AuthorizedRole.TJENESTE_ADMIN.getShortName()));
+        assertTrue(authorizationClient.canManageAccessAssignment(AuthorizedRole.TILDELER.getShortName()));
+    }
+
+    @Test
+    public void shouldNotBeAllowedToCreateSysadminRessursAdminAsRessursadmin() {
+        String userName = "ragnild.hansen@viken.no";
+
+        when(authenticationUtil.isAuthenticated()).thenReturn(true);
+        when(authenticationUtil.getUserName()).thenReturn(userName);
+        when(authenticationUtil.getUrl()).thenReturn("/api/test");
+        when(authenticationUtil.isAdmin()).thenReturn(false);
+
+        when(opaApiClient.getRolesForUser(userName, "/api/test")).thenReturn(List.of("ra"));
+
+        assertFalse(authorizationClient.canManageAccessAssignment(AuthorizedRole.SYSTEM_ADMIN.getShortName()));
+        assertFalse(authorizationClient.canManageAccessAssignment(AuthorizedRole.RESSURS_ADMIN.getShortName()));
+        assertTrue(authorizationClient.canManageAccessAssignment(AuthorizedRole.TJENESTE_ADMIN.getShortName()));
+    }
+
+    @Test
+    public void shouldNotBeAllowedToCreateSysadminRessursTjenesteAdminAsTjenesteadmin() {
+        String userName = "ragnild.hansen@viken.no";
+
+        when(authenticationUtil.isAuthenticated()).thenReturn(true);
+        when(authenticationUtil.getUserName()).thenReturn(userName);
+        when(authenticationUtil.getUrl()).thenReturn("/api/test");
+        when(authenticationUtil.isAdmin()).thenReturn(false);
+
+        when(opaApiClient.getRolesForUser(userName, "/api/test")).thenReturn(List.of("ta"));
+
+        assertFalse(authorizationClient.canManageAccessAssignment(AuthorizedRole.SYSTEM_ADMIN.getShortName()));
+        assertFalse(authorizationClient.canManageAccessAssignment(AuthorizedRole.RESSURS_ADMIN.getShortName()));
+        assertFalse(authorizationClient.canManageAccessAssignment(AuthorizedRole.TJENESTE_ADMIN.getShortName()));
+        assertTrue(authorizationClient.canManageAccessAssignment(AuthorizedRole.TILDELER.getShortName()));
+    }
+
+    @Test
+    public void shouldNotBeAllowedToCreateAnyAsTildeler() {
+        String userName = "ragnild.hansen@viken.no";
+
+        when(authenticationUtil.isAuthenticated()).thenReturn(true);
+        when(authenticationUtil.getUserName()).thenReturn(userName);
+        when(authenticationUtil.getUrl()).thenReturn("/api/test");
+        when(authenticationUtil.isAdmin()).thenReturn(false);
+
+        when(opaApiClient.getRolesForUser(userName, "/api/test")).thenReturn(List.of("td"));
+
+        assertFalse(authorizationClient.canManageAccessAssignment(AuthorizedRole.SYSTEM_ADMIN.getShortName()));
+        assertFalse(authorizationClient.canManageAccessAssignment(AuthorizedRole.RESSURS_ADMIN.getShortName()));
+        assertFalse(authorizationClient.canManageAccessAssignment(AuthorizedRole.TJENESTE_ADMIN.getShortName()));
+        assertFalse(authorizationClient.canManageAccessAssignment(AuthorizedRole.TILDELER.getShortName()));
+        assertFalse(authorizationClient.canManageAccessAssignment(AuthorizedRole.LEDER.getShortName()));
     }
 }
