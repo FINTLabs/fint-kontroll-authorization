@@ -47,6 +47,7 @@ public final class KontrollAuthorizationManager implements AuthorizationManager<
 
     @Override
     public AuthorizationDecision check(Supplier<Authentication> auth, RequestAuthorizationContext requestContext) {
+        log.info("Checking authorization. Request URI: {}", getRequestPath(requestContext));
 
         if (getRequestPath(requestContext).contains("/swagger-ui") || getRequestPath(requestContext).contains("/api-docs") ||
             getRequestPath(requestContext).contains("/opabundle") || getRequestPath(requestContext).contains("/actuator") || getRequestPath(requestContext).contains("/metrics")) {
