@@ -16,7 +16,9 @@ import org.springframework.security.web.access.intercept.RequestAuthorizationCon
 import org.springframework.stereotype.Component;
 
 import java.util.Collections;
+import java.util.Enumeration;
 import java.util.List;
+import java.util.Map;
 import java.util.function.Supplier;
 import java.util.stream.Collectors;
 
@@ -54,16 +56,22 @@ public final class KontrollAuthorizationManager implements AuthorizationManager<
 
         Authentication authentication = auth.get();
         if (!(authentication instanceof final JwtAuthenticationToken jwtToken)) {
+            Enumeration<String> headerNames = requestContext.getRequest().getHeaderNames();
+            Map<String, String> collect = Collections.emptyMap();
+
+            if (headerNames != null) {
+                collect = Collections.list(headerNames)
+                        .stream()
+                        .collect(Collectors.toMap(
+                                name -> name,
+                                name -> requestContext.getRequest().getHeader(name)
+                        ));
+            }
             log.warn("Illegal jwt token: {}. Request URI: {}. Request servlet path: {}. Headers: {}",
                      authentication.getClass().getName(),
                      requestContext.getRequest().getRequestURI(),
                      requestContext.getRequest().getServletPath(),
-                     Collections.list(requestContext.getRequest().getHeaderNames())
-                             .stream()
-                             .collect(Collectors.toMap(
-                                     name -> name,
-                                     name -> requestContext.getRequest().getHeader(name)
-                             ))
+                     collect
             );
 
             throw new AccessDeniedException("Access denied, illegal JwtAuthenticationToken: " + authentication.getClass().getName());
