@@ -45,7 +45,7 @@ public final class KontrollAuthorizationManager implements AuthorizationManager<
     public AuthorizationDecision check(Supplier<Authentication> auth, RequestAuthorizationContext requestContext) {
 
         if (getRequestPath(requestContext).contains("/swagger-ui") || getRequestPath(requestContext).contains("/api-docs") ||
-            getRequestPath(requestContext).contains("/opabundle")) {
+            getRequestPath(requestContext).contains("/opabundle") || getRequestPath(requestContext).contains("/actuator") || getRequestPath(requestContext).contains("/metrics")) {
             log.debug("Swagger or api-docs, skipping authorization");
             return new AuthorizationDecision(true);
         }
