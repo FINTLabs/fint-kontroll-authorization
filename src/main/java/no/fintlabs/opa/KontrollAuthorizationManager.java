@@ -47,7 +47,7 @@ public final class KontrollAuthorizationManager implements AuthorizationManager<
 
     @Override
     public AuthorizationDecision check(Supplier<Authentication> auth, RequestAuthorizationContext requestContext) {
-        log.info("Checking authorization. Request URI: {}", getRequestPath(requestContext));
+        log.debug("Checking authorization. Request URI: {}", getRequestPath(requestContext));
 
         if (getRequestPath(requestContext).contains("/swagger-ui") || getRequestPath(requestContext).contains("/api-docs") ||
             getRequestPath(requestContext).contains("/opabundle") || getRequestPath(requestContext).contains("/actuator") || getRequestPath(requestContext).contains("/metrics")) {
@@ -57,23 +57,7 @@ public final class KontrollAuthorizationManager implements AuthorizationManager<
 
         Authentication authentication = auth.get();
         if (!(authentication instanceof final JwtAuthenticationToken jwtToken)) {
-            Enumeration<String> headerNames = requestContext.getRequest().getHeaderNames();
-            Map<String, String> collect = Collections.emptyMap();
-
-            if (headerNames != null) {
-                collect = Collections.list(headerNames)
-                        .stream()
-                        .collect(Collectors.toMap(
-                                name -> name,
-                                name -> requestContext.getRequest().getHeader(name)
-                        ));
-            }
-            log.warn("Illegal jwt token: {}. Request URI: {}. Request servlet path: {}. Headers: {}",
-                     authentication.getClass().getName(),
-                     requestContext.getRequest().getRequestURI(),
-                     requestContext.getRequest().getServletPath(),
-                     collect
-            );
+            logInvalidTokenRequestData(requestContext, authentication);
 
             throw new AccessDeniedException("Access denied, illegal JwtAuthenticationToken: " + authentication.getClass().getName());
         }
@@ -107,6 +91,26 @@ public final class KontrollAuthorizationManager implements AuthorizationManager<
         }
 
         return new AuthorizationDecision(true);
+    }
+
+    private void logInvalidTokenRequestData(RequestAuthorizationContext requestContext, Authentication authentication) {
+        Enumeration<String> headerNames = requestContext.getRequest().getHeaderNames();
+        Map<String, String> collect = Collections.emptyMap();
+
+        if (headerNames != null) {
+            collect = Collections.list(headerNames)
+                    .stream()
+                    .collect(Collectors.toMap(
+                            name -> name,
+                            name -> requestContext.getRequest().getHeader(name)
+                    ));
+        }
+        log.warn("Illegal jwt token: {}. Request URI: {}. Request servlet path: {}. Headers: {}",
+                 authentication.getClass().getName(),
+                 requestContext.getRequest().getRequestURI(),
+                 requestContext.getRequest().getServletPath(),
+                 collect
+        );
     }
 
     private boolean isLocalhost() {
