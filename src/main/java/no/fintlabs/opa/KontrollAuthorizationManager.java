@@ -15,8 +15,10 @@ import org.springframework.security.oauth2.server.resource.authentication.JwtAut
 import org.springframework.security.web.access.intercept.RequestAuthorizationContext;
 import org.springframework.stereotype.Component;
 
+import java.util.Collections;
 import java.util.List;
 import java.util.function.Supplier;
+import java.util.stream.Collectors;
 
 @Slf4j
 @RequiredArgsConstructor
@@ -52,7 +54,18 @@ public final class KontrollAuthorizationManager implements AuthorizationManager<
 
         Authentication authentication = auth.get();
         if (!(authentication instanceof final JwtAuthenticationToken jwtToken)) {
-            log.warn("Illegal jwt token: " + authentication.getClass().getName() + ". Request URI: " + requestContext.getRequest().getRequestURI() + ". Request servlet path: " + requestContext.getRequest().getServletPath());
+            log.warn("Illegal jwt token: {}. Request URI: {}. Request servlet path: {}. Headers: {}",
+                     authentication.getClass().getName(),
+                     requestContext.getRequest().getRequestURI(),
+                     requestContext.getRequest().getServletPath(),
+                     Collections.list(requestContext.getRequest().getHeaderNames())
+                             .stream()
+                             .collect(Collectors.toMap(
+                                     name -> name,
+                                     name -> requestContext.getRequest().getHeader(name)
+                             ))
+            );
+
             throw new AccessDeniedException("Access denied, illegal JwtAuthenticationToken: " + authentication.getClass().getName());
         }
 
