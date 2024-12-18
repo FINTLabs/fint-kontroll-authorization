@@ -3,6 +3,7 @@ package no.fintlabs.opa;
 import lombok.extern.slf4j.Slf4j;
 import no.fintlabs.opa.model.AuthRole;
 import no.fintlabs.opa.model.AuthorizedRole;
+import no.fintlabs.opa.model.MenuItem;
 import no.fintlabs.opa.model.Scope;
 import no.fintlabs.util.AuthenticationUtil;
 import org.springframework.stereotype.Component;
@@ -89,6 +90,27 @@ public class AuthorizationClient {
                                                       .build())));
 
         return userRoles;
+    }
+
+    public List<MenuItem> getMenuItems() {
+        log.info("Getting menu items");
+        Boolean authenticated = authenticationUtil.isAuthenticated();
+        log.info("User is authenticated: {}", authenticated);
+
+        if (authenticated) {
+            String userName = authenticationUtil.getUserName();
+
+            if(userName == null || userName.isEmpty()) {
+                log.info("Username not found in authorization token {}", userName);
+                return List.of();
+            }
+
+            log.info("Looking up menu items for user {}", userName);
+            return opaApiClient.getMenuItemsForUser(userName, authenticationUtil.getUrl());
+        } else {
+            log.info("User is not authenticated");
+            return List.of();
+        }
     }
 
     public boolean canManageAccessAssignment(String roleId) {

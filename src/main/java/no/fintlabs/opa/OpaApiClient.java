@@ -2,6 +2,8 @@ package no.fintlabs.opa;
 
 import lombok.extern.slf4j.Slf4j;
 import no.fintlabs.opa.model.AllowResponse;
+import no.fintlabs.opa.model.MenuItem;
+import no.fintlabs.opa.model.MenuItemsResponse;
 import no.fintlabs.opa.model.OpaRequest;
 import no.fintlabs.opa.model.RolesResponse;
 import no.fintlabs.opa.model.Scope;
@@ -37,9 +39,7 @@ public class OpaApiClient {
     public List<Scope> getScopesListForUser(String user, String url) {
         log.info("Getting scopes for user {}", user);
 
-        HttpHeaders headers = new HttpHeaders();
-        headers.setContentType(MediaType.APPLICATION_JSON);
-        HttpEntity<Map<String, Object>> request = new HttpEntity<>(createOpaRequestData(user, "GET", url), headers);
+        HttpEntity<Map<String, Object>> request = createRequest(user, "GET", url);
 
         try {
             ResponseEntity<ScopesListResponse> response = restTemplate.exchange("/scopeslist", HttpMethod.POST, request, ScopesListResponse.class);
@@ -70,7 +70,7 @@ public class OpaApiClient {
     }
 
     public boolean hasUserAuthorization(String user, String operation, String url) {
-        HttpEntity<Map<String, Object>> request = new HttpEntity<>(createOpaRequestData(user, operation, url));
+        HttpEntity<Map<String, Object>> request = createRequest(user, operation, url);
 
         try {
             log.info("Fetching authorization for user {}, operation {} and url {}", user, operation, url);
@@ -89,20 +89,14 @@ public class OpaApiClient {
         return false;
     }
 
-    private Map<String, Object> createOpaRequestData(String user, String operation, String url) {
-        return Map.of("input", new OpaRequest(user, operation, url));
-    }
-
     public List<String> getRolesForUser(String userName, String url) {
         log.info("Getting roles for user {}", userName);
 
-        HttpHeaders headers = new HttpHeaders();
-        headers.setContentType(MediaType.APPLICATION_JSON);
-        HttpEntity<Map<String, Object>> request = new HttpEntity<>(createOpaRequestData(userName, "GET", url), headers);
+        HttpEntity<Map<String, Object>> request = createRequest(userName, "GET", url);
 
         try {
             ResponseEntity<RolesResponse> response = restTemplate.exchange("/roles", HttpMethod.POST, request, RolesResponse.class);
-            log.info("Got user assignments from OPA: {}", response.getBody());
+            log.info("Got roles from OPA: {}", response.getBody());
 
             if (response.getBody() != null) {
                 return response.getBody().getRoles().stream()
@@ -118,7 +112,32 @@ public class OpaApiClient {
         return Collections.emptyList();
     }
 
+    public List<MenuItem> getMenuItemsForUser(String userName, String url) {
+        log.info("Getting menuitems for user {}", userName);
 
+        HttpEntity<Map<String, Object>> request = createRequest(userName, "GET", url);
+
+        try {
+            ResponseEntity<MenuItemsResponse> response = restTemplate.exchange("/menuitems", HttpMethod.POST, request, MenuItemsResponse.class);
+            log.info("Got menuitems from OPA: {}", response.getBody());
+
+            if (response.getBody() != null) {
+                return response.getBody().getMenuItems();
+            }
+        } catch (HttpClientErrorException e) {
+            log.warn("Could not fetch menuitems for user {}. Response status: {}", userName, e.getStatusCode());
+        } catch (Exception e) {
+            log.error("An error occurred while fetching menuitems for user {}", userName, e);
+        }
+
+        return Collections.emptyList();
+    }
+
+    private HttpEntity<Map<String, Object>> createRequest(String user, String operation, String url) {
+        HttpHeaders headers = new HttpHeaders();
+        headers.setContentType(MediaType.APPLICATION_JSON);
+        return new HttpEntity<>(Map.of("input", new OpaRequest(user, operation, url)), headers);
+    }
 
 
 }

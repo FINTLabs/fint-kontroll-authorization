@@ -1,6 +1,7 @@
 package no.fintlabs.opa;
 
 import jakarta.servlet.http.HttpServletRequest;
+import no.fintlabs.opa.model.MenuItem;
 import no.fintlabs.opa.model.Scope;
 import okhttp3.mockwebserver.MockResponse;
 import okhttp3.mockwebserver.MockWebServer;
@@ -179,6 +180,34 @@ public class OpaApiClientTest {
         RecordedRequest recordedRequest = mockWebServer.takeRequest();
         assertEquals("POST", recordedRequest.getMethod());
         assertEquals("/roles", recordedRequest.getPath());
+    }
+
+    @Test
+    public void testGetAllMenuItems() throws InterruptedException {
+        String rolesResultJson = """
+                {
+                 	"result": [
+                 		{
+                 			"text": "Test url beta",
+                 			"url": "/beta/test/url"
+                 		}
+                 	]
+                }
+                """;
+        mockWebServer.enqueue(new MockResponse()
+                                      .setBody(rolesResultJson)
+                                      .addHeader("Content-Type", "application/json"));
+
+        List<MenuItem> menuItems = opaApiClient.getMenuItemsForUser("morten.solberg@novari.no", "/api/test");
+
+        assertEquals(1, menuItems.size());
+
+        assertThat(menuItems.getFirst()).hasFieldOrPropertyWithValue("text", "Test url beta");
+        assertThat(menuItems.getFirst()).hasFieldOrPropertyWithValue("url", "/beta/test/url");
+
+        RecordedRequest recordedRequest = mockWebServer.takeRequest();
+        assertEquals("POST", recordedRequest.getMethod());
+        assertEquals("/menuitems", recordedRequest.getPath());
     }
 
     @Test

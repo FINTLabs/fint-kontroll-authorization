@@ -2,6 +2,7 @@ package no.fintlabs.opa;
 
 import no.fintlabs.opa.model.AuthRole;
 import no.fintlabs.opa.model.AuthorizedRole;
+import no.fintlabs.opa.model.MenuItem;
 import no.fintlabs.opa.model.Scope;
 import no.fintlabs.util.AuthenticationUtil;
 import org.junit.jupiter.api.BeforeEach;
@@ -141,6 +142,24 @@ public class AuthorizationClientTest {
         assertThat(userRoles).hasSize(1);
         assertThat(userRoles.getFirst().getName()).isEqualTo(AuthorizedRole.TILDELER.getName());
         assertThat(userRoles.getFirst().getId()).isEqualTo(AuthorizedRole.TILDELER.getShortName());
+    }
+
+    @Test
+    public void shouldGetMenuItemsForUser() {
+        String userName = "ragnild.hansen@viken.no";
+
+        when(authenticationUtil.isAdmin()).thenReturn(false);
+        when(authenticationUtil.isAuthenticated()).thenReturn(true);
+        when(authenticationUtil.getUserName()).thenReturn(userName);
+        when(authenticationUtil.getUrl()).thenReturn("/api/test");
+        when(opaApiClient.getMenuItemsForUser(userName, "/api/test")).thenReturn(List.of(new MenuItem( "/beta/test/url", "Test url beta")));
+
+        List<MenuItem> menuItems = authorizationClient.getMenuItems();
+
+        assertThat(menuItems).isNotEmpty();
+        assertThat(menuItems).hasSize(1);
+        assertThat(menuItems.getFirst().text()).isEqualTo("Test url beta");
+        assertThat(menuItems.getFirst().url()).isEqualTo("/beta/test/url");
     }
 
     @Test
