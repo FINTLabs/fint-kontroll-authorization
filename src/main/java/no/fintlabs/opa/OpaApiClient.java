@@ -77,13 +77,13 @@ public class OpaApiClient {
             ResponseEntity<AllowResponse> allow = restTemplate.exchange("/allow", HttpMethod.POST, request, AllowResponse.class);
 
             boolean authorized = allow.getBody() != null && allow.getBody().isAllow();
-            log.info("User {} got authorization response for operation {}: {}", user, operation, authorized);
+            log.info("User {} got authorization response for operation {} {}: {}", user, operation, url, authorized);
 
             return authorized;
         } catch (HttpClientErrorException e) {
-            log.warn("Could not fetch authorization for user {}. Response status: {}", user, e.getStatusCode());
+            log.warn("Could not fetch authorization for user {}. Response status: {}. URL: {}", user, e.getStatusCode(), url, e);
         } catch (Exception e) {
-            log.error("An error occurred while fetching authorization for user {}", user, e);
+            log.error("An error occurred while fetching authorization for user {}, URL: {}", user, url, e);
         }
 
         return false;

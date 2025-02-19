@@ -152,7 +152,7 @@ public class AuthorizationClientTest {
         when(authenticationUtil.isAuthenticated()).thenReturn(true);
         when(authenticationUtil.getUserName()).thenReturn(userName);
         when(authenticationUtil.getUrl()).thenReturn("/api/test");
-        when(opaApiClient.getMenuItemsForUser(userName, "/api/test")).thenReturn(List.of(new MenuItem( "/beta/test/url", "Test url beta")));
+        when(opaApiClient.getMenuItemsForUser(userName, "/api/test")).thenReturn(List.of(new MenuItem( "/beta/test/url", "Test url beta", 1)));
 
         List<MenuItem> menuItems = authorizationClient.getMenuItems();
 
@@ -160,6 +160,7 @@ public class AuthorizationClientTest {
         assertThat(menuItems).hasSize(1);
         assertThat(menuItems.getFirst().text()).isEqualTo("Test url beta");
         assertThat(menuItems.getFirst().url()).isEqualTo("/beta/test/url");
+        assertThat(menuItems.getFirst().sortOrder()).isEqualTo(1);
     }
 
     @Test
