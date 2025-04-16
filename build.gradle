@@ -23,21 +23,6 @@ jar {
     enabled = true
 }
 
-publishing {
-    publications {
-        mavenJava(MavenPublication) {
-            from components.java
-        }
-    }
-    repositories {
-        mavenLocal()
-    }
-}
-
-afterEvaluate {
-    publishing.publications.remove(publishing.publications.findByName("maven"))
-}
-
 repositories {
     mavenLocal()
     maven {
