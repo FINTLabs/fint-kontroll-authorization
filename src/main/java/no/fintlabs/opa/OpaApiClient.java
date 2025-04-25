@@ -61,9 +61,9 @@ public class OpaApiClient {
 
             return mergedScopes;
         } catch (HttpClientErrorException e) {
-            log.warn("Could not fetch scopes for user {}. Response status: {}", user, e.getStatusCode());
+            log.warn("Could not fetch scopes for user {}. Response status: {}. URL: {}", user, e.getStatusCode(), url, e);
         } catch (Exception e) {
-            log.error("An error occurred while fetching scopes for user {}", user, e);
+            log.error("An error occurred while fetching scopes for user {}. URL: {}", user, url, e);
         }
 
         return Collections.emptyList();
@@ -104,9 +104,9 @@ public class OpaApiClient {
                         .toList();
             }
         } catch (HttpClientErrorException e) {
-            log.warn("Could not fetch roles for user {}. Response status: {}", userName, e.getStatusCode());
+            log.warn("Could not fetch roles for user {}. Response status: {}. URL: {}", userName, e.getStatusCode(), url, e);
         } catch (Exception e) {
-            log.error("An error occurred while fetching roles for user {}", userName, e);
+            log.error("An error occurred while fetching roles for user {}. URL: {}", userName, url, e);
         }
 
         return Collections.emptyList();
@@ -125,9 +125,9 @@ public class OpaApiClient {
                 return response.getBody().getMenuItems();
             }
         } catch (HttpClientErrorException e) {
-            log.warn("Could not fetch menuitems for user {}. Response status: {}", userName, e.getStatusCode());
+            log.warn("Could not fetch menuitems for user {}. Response status: {}. URL: {}", userName, e.getStatusCode(), url, e);
         } catch (Exception e) {
-            log.error("An error occurred while fetching menuitems for user {}", userName, e);
+            log.error("An error occurred while fetching menuitems for user {}. URL: {}", userName, url, e);
         }
 
         return Collections.emptyList();
