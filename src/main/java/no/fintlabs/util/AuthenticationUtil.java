@@ -70,6 +70,7 @@ public class AuthenticationUtil {
 
         requestURI = requestURI.replace("/" + orgId, "");
         requestURI = requestURI.replace("/beta/fintlabs-no", "");
+        requestURI = requestURI.replace("/fintlabs-no", "");
 
         log.info("Stripped request URI: {}", requestURI);
         return requestURI;
