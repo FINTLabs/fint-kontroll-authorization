@@ -1,8 +1,8 @@
 package no.fintlabs.securityconfig;
 
+import lombok.RequiredArgsConstructor;
 import no.fintlabs.opa.KontrollAuthorizationManager;
 import no.fintlabs.util.JwtUserConverter;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
@@ -11,10 +11,12 @@ import org.springframework.security.web.SecurityFilterChain;
 
 @Configuration
 @EnableWebSecurity
+@RequiredArgsConstructor
 public class FintKontrollSecurityConfig {
 
-    @Autowired
-    private KontrollAuthorizationManager kontrollAuthorizationManager;
+    private final KontrollAuthorizationManager kontrollAuthorizationManager;
+    private final CustomAuthenticationEntryPoint authenticationEntryPoint;
+    private final CustomAccessDeniedHandler accessDeniedHandler;
 
     @Bean
     public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
@@ -24,7 +26,13 @@ public class FintKontrollSecurityConfig {
                 )
                 .oauth2ResourceServer((resourceServer) -> resourceServer
                         .jwt(jwt -> jwt
-                                .jwtAuthenticationConverter(new JwtUserConverter())));
+                                .jwtAuthenticationConverter(new JwtUserConverter()))
+                .authenticationEntryPoint(authenticationEntryPoint))
+                .exceptionHandling(exceptionHandling -> exceptionHandling
+                        .accessDeniedHandler(accessDeniedHandler)
+                )   .exceptionHandling(exceptionHandling -> exceptionHandling
+                        .accessDeniedHandler(accessDeniedHandler)
+                );
         return http.build();
     }
 }

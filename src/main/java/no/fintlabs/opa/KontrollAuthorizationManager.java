@@ -7,6 +7,8 @@ import no.vigoiks.resourceserver.security.FintJwtEndUserPrincipal;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.security.access.AccessDeniedException;
+import org.springframework.security.authentication.AuthenticationCredentialsNotFoundException;
+import org.springframework.security.authentication.InsufficientAuthenticationException;
 import org.springframework.security.authorization.AuthorizationDecision;
 import org.springframework.security.authorization.AuthorizationManager;
 import org.springframework.security.core.Authentication;
@@ -59,7 +61,7 @@ public final class KontrollAuthorizationManager implements AuthorizationManager<
         if (!(authentication instanceof final JwtAuthenticationToken jwtToken)) {
             logInvalidTokenRequestData(requestContext, authentication);
 
-            throw new AccessDeniedException("Access denied, illegal JwtAuthenticationToken: " + authentication.getClass().getName());
+            throw new AuthenticationCredentialsNotFoundException("Access denied, illegal JwtAuthenticationToken: " + authentication.getClass().getName());
         }
 
         String userName = getUserNameFromToken(jwtToken);
@@ -68,7 +70,7 @@ public final class KontrollAuthorizationManager implements AuthorizationManager<
 
         if (!authenticated) {
             log.info("User not authenticated, access denied");
-            throw new AccessDeniedException("User not authenticated, access is denied");
+            throw new InsufficientAuthenticationException("User not authenticated, access is denied");
         }
 
         if (!isLocalhost()) {

@@ -9,6 +9,7 @@ import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.security.access.AccessDeniedException;
+import org.springframework.security.authentication.AuthenticationCredentialsNotFoundException;
 import org.springframework.security.authentication.TestingAuthenticationToken;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.GrantedAuthority;
@@ -152,7 +153,7 @@ public class KontrollAuthorizationManagerTest {
 
         when(httpServletRequest.getRequestURI()).thenReturn("/api/orgunits");
 
-        assertThrows(AccessDeniedException.class, () -> kontrollAuthorizationManager.check(notJwtAuth, requestAuthorizationContext));
+        assertThrows(AuthenticationCredentialsNotFoundException.class, () -> kontrollAuthorizationManager.check(notJwtAuth, requestAuthorizationContext));
     }
 
     @Test
