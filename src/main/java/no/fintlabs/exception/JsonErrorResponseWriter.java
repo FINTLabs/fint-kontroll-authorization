@@ -1,4 +1,4 @@
-package no.fintlabs.util;
+package no.fintlabs.exception;
 
 import jakarta.servlet.http.HttpServletResponse;
 import lombok.extern.slf4j.Slf4j;
@@ -7,8 +7,8 @@ import java.io.IOException;
 @Slf4j
 public class JsonErrorResponseWriter {
 
-    public static void write(HttpServletResponse response, int statusCode, String error, String message, String path, String applicationId) throws IOException {
-        response.setStatus(statusCode);
+    public static void write(HttpServletResponse response, ErrorResponse errorResponse) throws IOException {
+        response.setStatus(errorResponse.status());
         response.setContentType("application/json");
 
         String json = """
@@ -19,7 +19,7 @@ public class JsonErrorResponseWriter {
               "path": "%s",
               "application": "%s"
             }
-            """.formatted(statusCode, error, message, path, applicationId);
+            """.formatted(errorResponse.status(), errorResponse.error(), errorResponse.message(), errorResponse.path(), errorResponse.application());
 
         log.warn("Returning error response: {}", json);
 
