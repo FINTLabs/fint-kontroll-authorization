@@ -30,8 +30,6 @@ public class FintKontrollSecurityConfig {
                 .authenticationEntryPoint(authenticationEntryPoint))
                 .exceptionHandling(exceptionHandling -> exceptionHandling
                         .accessDeniedHandler(accessDeniedHandler)
-                )   .exceptionHandling(exceptionHandling -> exceptionHandling
-                        .accessDeniedHandler(accessDeniedHandler)
                 );
         return http.build();
     }

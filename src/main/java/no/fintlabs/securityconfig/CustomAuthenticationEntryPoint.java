@@ -18,7 +18,6 @@ public class CustomAuthenticationEntryPoint implements AuthenticationEntryPoint 
 
     private final ErrorResponseFactory errorResponseFactory;
 
-
     @Override
     public void commence(HttpServletRequest request, HttpServletResponse response, AuthenticationException authException) throws IOException {
         ErrorResponse errorResponse = errorResponseFactory.create(HttpServletResponse.SC_UNAUTHORIZED,

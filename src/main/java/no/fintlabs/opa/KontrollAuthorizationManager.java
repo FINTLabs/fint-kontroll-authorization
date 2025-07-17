@@ -46,7 +46,7 @@ public final class KontrollAuthorizationManager implements AuthorizationManager<
 
     @Autowired
     private AuthenticationUtil authenticationUtil;
-
+k
     @Override
     public AuthorizationDecision check(Supplier<Authentication> auth, RequestAuthorizationContext requestContext) {
         log.debug("Checking authorization. Request URI: {}", getRequestPath(requestContext));
