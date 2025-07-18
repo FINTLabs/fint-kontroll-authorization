@@ -2,7 +2,7 @@ package no.fintlabs.opa;
 
 import lombok.extern.slf4j.Slf4j;
 import no.fintlabs.util.AuthenticationUtil;
-import no.fintlabs.util.OnlyVigoAdmin;
+import no.fintlabs.util.OnlyDevelopers;
 import no.vigoiks.resourceserver.security.FintJwtEndUserPrincipal;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.beans.factory.annotation.Value;
@@ -29,7 +29,7 @@ import java.util.stream.Collectors;
 @Component
 public final class KontrollAuthorizationManager implements AuthorizationManager<RequestAuthorizationContext> {
 
-    private static final String VIGO_ADMIN_ROLE = "ROLE_vigo-vigobas-administrators";
+    private static final String DEVELOPER_ROLE = "https://role-catalog.vigoiks.no/vigo/kontroll/developer";
     private final AuthorizationClient authorizationClient;
     @Value("${fint.kontroll.authorization.authorized-role:rolle}")
     private String authorizedRole;
@@ -62,28 +62,27 @@ public final class KontrollAuthorizationManager implements AuthorizationManager<
     @Override
     public AuthorizationDecision check(Supplier<Authentication> auth, RequestAuthorizationContext requestContext) {
         log.debug("Checking authorization. Request URI: {}", getRequestPath(requestContext));
-        try {
-            HandlerExecutionChain chain = handlerMapping.getHandler(requestContext.getRequest());
-            if (chain != null && chain.getHandler() instanceof HandlerMethod handlerMethod) {
-                if (handlerMethod.hasMethodAnnotation(OnlyVigoAdmin.class)) {
-                    log.info("Skipping standard authorization. Request URI: {}", getRequestPath(requestContext));
-                    return checkIfVigoAdmin(auth.get());
-                }
-            }
-        } catch (Exception e) {
-            log.warn("Could not resolve handler method", e);
-        }
         if (getRequestPath(requestContext).contains("/swagger-ui") || getRequestPath(requestContext).contains("/api-docs") ||
                 getRequestPath(requestContext).contains("/opabundle") || getRequestPath(requestContext).contains("/actuator") || getRequestPath(requestContext).contains("/metrics")) {
             log.debug("Swagger or api-docs, skipping authorization");
             return new AuthorizationDecision(true);
         }
-
         Authentication authentication = auth.get();
         if (!(authentication instanceof final JwtAuthenticationToken jwtToken)) {
             logInvalidTokenRequestData(requestContext, authentication);
 
             throw new AccessDeniedException("Access denied, illegal JwtAuthenticationToken: " + authentication.getClass().getName());
+        }
+        try {
+            HandlerExecutionChain chain = handlerMapping.getHandler(requestContext.getRequest());
+            if (chain != null && chain.getHandler() instanceof HandlerMethod handlerMethod) {
+                if (handlerMethod.hasMethodAnnotation(OnlyDevelopers.class)) {
+                    log.info("Skipping standard authorization. Request URI: {}", getRequestPath(requestContext));
+                    return checkIfDeveloper(jwtToken);
+                }
+            }
+        } catch (Exception e) {
+            log.warn("Could not resolve handler method", e);
         }
 
         String userName = getUserNameFromToken(jwtToken);
@@ -117,20 +116,13 @@ public final class KontrollAuthorizationManager implements AuthorizationManager<
         return new AuthorizationDecision(true);
     }
 
-    private AuthorizationDecision checkIfVigoAdmin(Authentication authentication) {
-        if (!(authentication instanceof final JwtAuthenticationToken jwtToken)) {
-            throw new AccessDeniedException("Access denied, illegal JwtAuthenticationToken: " + authentication.getClass().getName());
-        }
-        if (isUserVigoAdmin(jwtToken)) {
-            log.info("User is Vigo admin, access granted");
+    private AuthorizationDecision checkIfDeveloper(JwtAuthenticationToken authenticationToken) {
+        if (authenticationToken.getAuthorities().stream()
+                .anyMatch(a -> a.getAuthority().contains(DEVELOPER_ROLE))) {
+            log.info("User is a developer, access granted");
             return new AuthorizationDecision(true);
         }
         return new AuthorizationDecision(false);
-    }
-
-    private boolean isUserVigoAdmin(JwtAuthenticationToken authenticationToken) {
-        return authenticationToken.getAuthorities().stream()
-                .anyMatch(a -> a.getAuthority().equals(VIGO_ADMIN_ROLE));
     }
 
     private void logInvalidTokenRequestData(RequestAuthorizationContext requestContext, Authentication authentication) {
