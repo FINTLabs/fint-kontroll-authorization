@@ -1,10 +1,10 @@
 package no.fintlabs.opa;
 
-import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import no.fintlabs.util.AuthenticationUtil;
+import no.fintlabs.util.OnlyDevelopers;
 import no.vigoiks.resourceserver.security.FintJwtEndUserPrincipal;
-import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.security.access.AccessDeniedException;
 import org.springframework.security.authentication.AuthenticationCredentialsNotFoundException;
@@ -16,6 +16,9 @@ import org.springframework.security.oauth2.jwt.Jwt;
 import org.springframework.security.oauth2.server.resource.authentication.JwtAuthenticationToken;
 import org.springframework.security.web.access.intercept.RequestAuthorizationContext;
 import org.springframework.stereotype.Component;
+import org.springframework.web.method.HandlerMethod;
+import org.springframework.web.servlet.HandlerExecutionChain;
+import org.springframework.web.servlet.mvc.method.annotation.RequestMappingHandlerMapping;
 
 import java.util.Collections;
 import java.util.Enumeration;
@@ -25,43 +28,63 @@ import java.util.function.Supplier;
 import java.util.stream.Collectors;
 
 @Slf4j
-@RequiredArgsConstructor
 @Component
 public final class KontrollAuthorizationManager implements AuthorizationManager<RequestAuthorizationContext> {
 
-    @Autowired
-    private AuthorizationClient authorizationClient;
-
+    private static final String DEVELOPER_ROLE = "https://role-catalog.vigoiks.no/vigo/kontroll/developer";
+    private final AuthorizationClient authorizationClient;
     @Value("${fint.kontroll.authorization.authorized-role:rolle}")
     private String authorizedRole;
-
     @Value("${fint.kontroll.authorization.authorized-admin-role:admin}")
     private String adminRole;
-
     @Value("${fint.kontroll.authorization.authorized-org-id:vigo.no}")
     private String authorizedOrgId;
-
     @Value("${fint.relations.default-base-url:localhost}")
     private String baseUrl;
+    private final AuthenticationUtil authenticationUtil;
+    private final RequestMappingHandlerMapping handlerMapping;
 
-    @Autowired
-    private AuthenticationUtil authenticationUtil;
+    public KontrollAuthorizationManager(AuthenticationUtil authenticationUtil, @Qualifier("requestMappingHandlerMapping") RequestMappingHandlerMapping handlerMapping, AuthorizationClient authorizationClient) {
+        this.authenticationUtil = authenticationUtil;
+        this.handlerMapping = handlerMapping;
+        this.authorizationClient = authorizationClient;
+    }
+
+    private static String getRequestMethod(RequestAuthorizationContext sra) {
+        log.debug("Request method {}", sra.getRequest().getMethod());
+        log.debug("Request path {}", sra.getRequest().getRequestURI());
+        return sra.getRequest().getMethod();
+    }
+
+    private static String getRequestPath(RequestAuthorizationContext sra) {
+        log.debug("Request path {}", sra.getRequest().getRequestURI());
+        return sra.getRequest().getRequestURI();
+    }
 
     @Override
     public AuthorizationDecision check(Supplier<Authentication> auth, RequestAuthorizationContext requestContext) {
         log.debug("Checking authorization. Request URI: {}", getRequestPath(requestContext));
-
         if (getRequestPath(requestContext).contains("/swagger-ui") || getRequestPath(requestContext).contains("/api-docs") ||
-            getRequestPath(requestContext).contains("/opabundle") || getRequestPath(requestContext).contains("/actuator") || getRequestPath(requestContext).contains("/metrics")) {
+                getRequestPath(requestContext).contains("/opabundle") || getRequestPath(requestContext).contains("/actuator") || getRequestPath(requestContext).contains("/metrics")) {
             log.debug("Swagger or api-docs, skipping authorization");
             return new AuthorizationDecision(true);
         }
-
         Authentication authentication = auth.get();
         if (!(authentication instanceof final JwtAuthenticationToken jwtToken)) {
             logInvalidTokenRequestData(requestContext, authentication);
 
             throw new AuthenticationCredentialsNotFoundException("Access denied, illegal JwtAuthenticationToken: " + authentication.getClass().getName());
+        }
+        try {
+            HandlerExecutionChain chain = handlerMapping.getHandler(requestContext.getRequest());
+            if (chain != null && chain.getHandler() instanceof HandlerMethod handlerMethod) {
+                if (handlerMethod.hasMethodAnnotation(OnlyDevelopers.class)) {
+                    log.info("Skipping standard authorization. Request URI: {}", getRequestPath(requestContext));
+                    return checkIfDeveloper(jwtToken);
+                }
+            }
+        } catch (Exception e) {
+            log.warn("Could not resolve handler method", e);
         }
 
         String userName = getUserNameFromToken(jwtToken);
@@ -95,6 +118,15 @@ public final class KontrollAuthorizationManager implements AuthorizationManager<
         return new AuthorizationDecision(true);
     }
 
+    private AuthorizationDecision checkIfDeveloper(JwtAuthenticationToken authenticationToken) {
+        if (authenticationToken.getAuthorities().stream()
+                .anyMatch(a -> a.getAuthority().contains(DEVELOPER_ROLE))) {
+            log.info("User is a developer, access granted");
+            return new AuthorizationDecision(true);
+        }
+        return new AuthorizationDecision(false);
+    }
+
     private void logInvalidTokenRequestData(RequestAuthorizationContext requestContext, Authentication authentication) {
         Enumeration<String> headerNames = requestContext.getRequest().getHeaderNames();
         Map<String, String> collect = Collections.emptyMap();
@@ -108,10 +140,10 @@ public final class KontrollAuthorizationManager implements AuthorizationManager<
                     ));
         }
         log.warn("Illegal jwt token: {}. Request URI: {}. Request servlet path: {}. Headers: {}",
-                 authentication.getClass().getName(),
-                 requestContext.getRequest().getRequestURI(),
-                 requestContext.getRequest().getServletPath(),
-                 collect
+                authentication.getClass().getName(),
+                requestContext.getRequest().getRequestURI(),
+                requestContext.getRequest().getServletPath(),
+                collect
         );
     }
 
@@ -124,17 +156,6 @@ public final class KontrollAuthorizationManager implements AuthorizationManager<
         }
 
         return false;
-    }
-
-    private static String getRequestMethod(RequestAuthorizationContext sra) {
-        log.debug("Request method {}", sra.getRequest().getMethod());
-        log.debug("Request path {}", sra.getRequest().getRequestURI());
-        return sra.getRequest().getMethod();
-    }
-
-    private static String getRequestPath(RequestAuthorizationContext sra) {
-        log.debug("Request path {}", sra.getRequest().getRequestURI());
-        return sra.getRequest().getRequestURI();
     }
 
     private String getUserNameFromToken(JwtAuthenticationToken jwtToken) {
@@ -174,19 +195,19 @@ public final class KontrollAuthorizationManager implements AuthorizationManager<
         return hasAdmin;
     }
 
-    protected void setAdminRole(String adminRole) {
+    void setAdminRole(String adminRole) {
         this.adminRole = adminRole;
     }
 
-    protected void setAuthorizedRole(String authorizedRole) {
+    void setAuthorizedRole(String authorizedRole) {
         this.authorizedRole = authorizedRole;
     }
 
-    protected void setAuthorizedOrgId(String authorizedOrgId) {
+    void setAuthorizedOrgId(String authorizedOrgId) {
         this.authorizedOrgId = authorizedOrgId;
     }
 
-    protected void setBaseUrl(String baseUrl) {
+    void setBaseUrl(String baseUrl) {
         this.baseUrl = baseUrl;
     }
 }

@@ -18,6 +18,7 @@ import org.springframework.security.core.authority.SimpleGrantedAuthority;
 import org.springframework.security.oauth2.jwt.Jwt;
 import org.springframework.security.oauth2.server.resource.authentication.JwtAuthenticationToken;
 import org.springframework.security.web.access.intercept.RequestAuthorizationContext;
+import org.springframework.web.servlet.mvc.method.annotation.RequestMappingHandlerMapping;
 
 import java.util.Set;
 import java.util.function.Supplier;
@@ -55,6 +56,8 @@ public class KontrollAuthorizationManagerTest {
 
     @Mock
     private AuthenticationUtil authenticationUtil;
+    @Mock
+    private RequestMappingHandlerMapping requestMappingHandlerMapping;
 
     @BeforeEach
     public void setUp() {
