@@ -20,12 +20,14 @@ import java.io.IOException;
 public class CustomAuthenticationEntryPoint implements AuthenticationEntryPoint {
 
     private final ProblemDetailFactory problemDetailFactory;
+    private final ObjectMapper objectMapper;
+
 
     @Override
     public void commence(HttpServletRequest request, HttpServletResponse response, AuthenticationException authException) throws IOException {
         ProblemDetail problem = problemDetailFactory.createProblemDetail(authException, request);
         log.warn("Unauthorized: {}", problem.getDetail());
         response.setContentType(MediaType.APPLICATION_PROBLEM_JSON_VALUE);
-        response.getWriter().write(new ObjectMapper().writeValueAsString(problem));
+        objectMapper.writeValue(response.getWriter(), problem);
     }
 }
