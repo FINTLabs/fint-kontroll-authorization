@@ -9,6 +9,8 @@ import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.security.access.AccessDeniedException;
+import org.springframework.security.authentication.AuthenticationCredentialsNotFoundException;
+import org.springframework.security.authentication.InsufficientAuthenticationException;
 import org.springframework.security.authentication.TestingAuthenticationToken;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.GrantedAuthority;
@@ -155,7 +157,7 @@ public class KontrollAuthorizationManagerTest {
 
         when(httpServletRequest.getRequestURI()).thenReturn("/api/orgunits");
 
-        assertThrows(AccessDeniedException.class, () -> kontrollAuthorizationManager.check(notJwtAuth, requestAuthorizationContext));
+        assertThrows(AuthenticationCredentialsNotFoundException.class, () -> kontrollAuthorizationManager.check(notJwtAuth, requestAuthorizationContext));
     }
 
     @Test
@@ -166,6 +168,21 @@ public class KontrollAuthorizationManagerTest {
 
         assertDoesNotThrow(() -> kontrollAuthorizationManager.check(notJwtAuth, requestAuthorizationContext));
     }
+
+    @Test
+    void testDecide_InsufficientAuthenticationExceptionWhenUserNotAuthenticated() {
+        when(httpServletRequest.getRequestURI()).thenReturn("/api/resource");
+        JwtAuthenticationToken token = mock(JwtAuthenticationToken.class);
+        when(token.isAuthenticated()).thenReturn(false);
+
+        Jwt jwt = mock(Jwt.class);
+        when(token.getPrincipal()).thenReturn(jwt);
+
+        assertThrows(InsufficientAuthenticationException.class,
+                () -> kontrollAuthorizationManager.check(() -> token, requestAuthorizationContext),
+                "User not authenticated, access is denied");
+    }
+
 
     private void setupUnAuthorizedUser() {
         expectRoleAndOrg();
