@@ -28,6 +28,7 @@ public class CustomAuthenticationEntryPoint implements AuthenticationEntryPoint 
         ProblemDetail problem = problemDetailFactory.createProblemDetail(authException, request);
         log.warn("Unauthorized: {}", problem.getDetail());
         response.setContentType(MediaType.APPLICATION_PROBLEM_JSON_VALUE);
+        response.setStatus(problem.getStatus());
         objectMapper.writeValue(response.getWriter(), problem);
     }
 }

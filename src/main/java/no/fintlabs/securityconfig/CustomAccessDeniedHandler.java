@@ -27,6 +27,7 @@ public class CustomAccessDeniedHandler implements AccessDeniedHandler {
         ProblemDetail problem = problemDetailFactory.createProblemDetail(ex, request);
         log.warn("Access denied: {}", problem.getDetail());
         response.setContentType(MediaType.APPLICATION_PROBLEM_JSON_VALUE);
+        response.setStatus(problem.getStatus());
         objectMapper.writeValue(response.getWriter(), problem);
     }
 }
