@@ -30,20 +30,20 @@ import java.util.Set;
 @Component
 public class OpaApiClient {
 
-    private RestTemplate restTemplate;
+    private final RestTemplate restTemplate;
 
     public OpaApiClient(RestTemplate restTemplate) {
         this.restTemplate = restTemplate;
     }
 
     public List<Scope> getScopesListForUser(String user, String url) {
-        log.info("Getting scopes for user {}", user);
+        log.debug("Getting scopes for user {}", user);
 
         HttpEntity<Map<String, Object>> request = createRequest(user, "GET", url);
 
         try {
             ResponseEntity<ScopesListResponse> response = restTemplate.exchange("/scopeslist", HttpMethod.POST, request, ScopesListResponse.class);
-            log.info("Got scopes from OPA: {}", response.getBody());
+            log.debug("Got scopes from OPA: {}", response.getBody());
 
             List<Scope> flattenedScopes = response.getBody().getScopes().stream()
                     .flatMap(List::stream)
@@ -73,11 +73,11 @@ public class OpaApiClient {
         HttpEntity<Map<String, Object>> request = createRequest(user, operation, url);
 
         try {
-            log.info("Fetching authorization for user {}, operation {} and url {}", user, operation, url);
+            log.debug("Fetching authorization for user {}, operation {} and url {}", user, operation, url);
             ResponseEntity<AllowResponse> allow = restTemplate.exchange("/allow", HttpMethod.POST, request, AllowResponse.class);
 
             boolean authorized = allow.getBody() != null && allow.getBody().isAllow();
-            log.info("User {} got authorization response for operation {} {}: {}", user, operation, url, authorized);
+            log.info("Authorization decision: user={}, operation={}, path={}, allowed={}", user, operation, url, authorized);
 
             return authorized;
         } catch (HttpClientErrorException e) {
@@ -90,13 +90,13 @@ public class OpaApiClient {
     }
 
     public List<String> getRolesForUser(String userName, String url) {
-        log.info("Getting roles for user {}", userName);
+        log.debug("Getting roles for user {}", userName);
 
         HttpEntity<Map<String, Object>> request = createRequest(userName, "GET", url);
 
         try {
             ResponseEntity<RolesResponse> response = restTemplate.exchange("/roles", HttpMethod.POST, request, RolesResponse.class);
-            log.info("Got roles from OPA: {}", response.getBody());
+            log.debug("Got roles from OPA: {}", response.getBody());
 
             if (response.getBody() != null) {
                 return response.getBody().getRoles().stream()
@@ -113,13 +113,13 @@ public class OpaApiClient {
     }
 
     public List<MenuItem> getMenuItemsForUser(String userName, String url) {
-        log.info("Getting menuitems for user {}", userName);
+        log.debug("Getting menuitems for user {}", userName);
 
         HttpEntity<Map<String, Object>> request = createRequest(userName, "GET", url);
 
         try {
             ResponseEntity<MenuItemsResponse> response = restTemplate.exchange("/menuitems", HttpMethod.POST, request, MenuItemsResponse.class);
-            log.info("Got menuitems from OPA: {}", response.getBody());
+            log.debug("Got menuitems from OPA: {}", response.getBody());
 
             if (response.getBody() != null) {
                 return response.getBody().getMenuItems();

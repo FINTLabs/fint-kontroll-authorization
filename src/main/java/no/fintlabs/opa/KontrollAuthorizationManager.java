@@ -20,12 +20,7 @@ import org.springframework.web.method.HandlerMethod;
 import org.springframework.web.servlet.HandlerExecutionChain;
 import org.springframework.web.servlet.mvc.method.annotation.RequestMappingHandlerMapping;
 
-import java.util.Collections;
-import java.util.Enumeration;
-import java.util.List;
-import java.util.Map;
 import java.util.function.Supplier;
-import java.util.stream.Collectors;
 
 @Slf4j
 @Component
@@ -79,7 +74,8 @@ public final class KontrollAuthorizationManager implements AuthorizationManager<
             HandlerExecutionChain chain = handlerMapping.getHandler(requestContext.getRequest());
             if (chain != null && chain.getHandler() instanceof HandlerMethod handlerMethod) {
                 if (handlerMethod.hasMethodAnnotation(OnlyDevelopers.class)) {
-                    log.info("Skipping standard authorization. Request URI: {}", getRequestPath(requestContext));
+                    log.info("User {} requested developer operation {} {}", jwtToken.getName(),
+                            requestContext.getRequest().getMethod(), requestContext.getRequest().getRequestURI());
                     return checkIfDeveloper(jwtToken);
                 }
             }
@@ -89,16 +85,18 @@ public final class KontrollAuthorizationManager implements AuthorizationManager<
 
         String userName = getUserNameFromToken(jwtToken);
         boolean authenticated = authentication.isAuthenticated();
-        log.info("User {} got authentication result {}", userName, authenticated);
+        log.info("User {} requested {} {}", userName,
+                requestContext.getRequest().getMethod(), requestContext.getRequest().getRequestURI());
+        log.debug("User {} got authentication result {}", userName, authenticated);
 
         if (!authenticated) {
-            log.info("User not authenticated, access denied");
+            log.debug("User not authenticated, access denied");
             throw new InsufficientAuthenticationException("User not authenticated, access is denied");
         }
 
         if (!isLocalhost()) {
             if (hasAdminRole(jwtToken) && hasCorrectOrgId(jwtToken)) {
-                log.info("User has admin role, access granted");
+                log.debug("User has admin role, access granted");
                 return new AuthorizationDecision(true);
             }
 
@@ -111,7 +109,7 @@ public final class KontrollAuthorizationManager implements AuthorizationManager<
         boolean authorized = authorizationClient.isAuthorized(userName, getRequestMethod(requestContext), authenticationUtil.getUrl());
 
         if (!authorized) {
-            log.info("User not authorized, access denied");
+            log.debug("User not authorized, access denied");
             throw new AccessDeniedException("User not authorized, access is denied");
         }
 
@@ -121,37 +119,25 @@ public final class KontrollAuthorizationManager implements AuthorizationManager<
     private AuthorizationDecision checkIfDeveloper(JwtAuthenticationToken authenticationToken) {
         if (authenticationToken.getAuthorities().stream()
                 .anyMatch(a -> a.getAuthority().contains(DEVELOPER_ROLE))) {
-            log.info("User is a developer, access granted");
+            log.debug("User is a developer, access granted");
             return new AuthorizationDecision(true);
         }
         return new AuthorizationDecision(false);
     }
 
     private void logInvalidTokenRequestData(RequestAuthorizationContext requestContext, Authentication authentication) {
-        Enumeration<String> headerNames = requestContext.getRequest().getHeaderNames();
-        Map<String, String> collect = Collections.emptyMap();
-
-        if (headerNames != null) {
-            collect = Collections.list(headerNames)
-                    .stream()
-                    .collect(Collectors.toMap(
-                            name -> name,
-                            name -> requestContext.getRequest().getHeader(name)
-                    ));
-        }
-        log.warn("Illegal jwt token: {}. Request URI: {}. Request servlet path: {}. Headers: {}",
+        log.warn("Illegal jwt token: {}. Request URI: {}. Request servlet path: {}",
                 authentication.getClass().getName(),
                 requestContext.getRequest().getRequestURI(),
-                requestContext.getRequest().getServletPath(),
-                collect
+                requestContext.getRequest().getServletPath()
         );
     }
 
     private boolean isLocalhost() {
-        log.info("Environment is: {}", baseUrl);
+        log.debug("Environment is: {}", baseUrl);
 
         if (baseUrl.equals("localhost")) {
-            log.info("Auth: Is localhost");
+            log.debug("Auth: Is localhost");
             return true;
         }
 
@@ -178,19 +164,10 @@ public final class KontrollAuthorizationManager implements AuthorizationManager<
     }
 
     boolean hasAdminRole(JwtAuthenticationToken jwtToken) {
-        log.info("Auth: Listing all roles found on jwt token");
-        jwtToken.getAuthorities().forEach(a -> log.info("Authorities in jwt: {}", a.getAuthority()));
-
-        List<String> roles = (List<String>) jwtToken.getTokenAttributes().get("roles");
-        if (roles != null) {
-            log.info("Auth: Listing all roles found on token attributes");
-            roles.forEach(r -> log.info("Roles in token attributes: {}", r));
-        }
-
         boolean hasAdmin = jwtToken.getAuthorities().stream()
                 .anyMatch(a -> a.getAuthority().equals("ROLE_" + adminRole));
 
-        log.info("Auth: Has admin role: {}", hasAdmin);
+        log.debug("Auth: Has admin role: {}", hasAdmin);
 
         return hasAdmin;
     }
